@@ -1,30 +1,51 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const isDev = false; // Cambia a true si estás en desarrollo
+
+// Detectar si estamos en modo desarrollo
+// app.isPackaged es false en desarrollo y true en producción
+const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 
 function createWindow() {
   // Crea la ventana del navegador.
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1400,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 768,
     webPreferences: {
       // preload: path.join(__dirname, 'preload.js'), // Comentado porque preload.js no existe
       nodeIntegration: false,
       contextIsolation: true,
+      enableRemoteModule: false,
+      sandbox: true,
     },
+    // Configuración de la ventana
+    backgroundColor: '#ffffff',
+    show: false, // No mostrar hasta que esté listo
+    icon: path.join(__dirname, 'public/favicon.ico'),
+  });
+
+  // Mostrar ventana cuando esté lista para evitar flash
+  win.once('ready-to-show', () => {
+    win.show();
   });
 
   // Carga la URL de tu aplicación de Vite.
-  win.loadURL(
-    isDev
-      ? 'http://localhost:3000'
-      : `file://${path.join(__dirname, 'build/index.html')}`
-  );
+  const startUrl = isDev
+    ? 'http://localhost:5173'
+    : `file://${path.join(__dirname, 'build/index.html')}`;
+
+  win.loadURL(startUrl);
 
   // Abre las herramientas de desarrollo si está en modo de desarrollo.
   if (isDev) {
     win.webContents.openDevTools();
   }
+
+  // Manejo de errores de carga
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorDescription);
+  });
 }
 
 // Este método se llamará cuando Electron haya terminado de inicializarse
