@@ -23,7 +23,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      sandbox: true,
+      sandbox: false,
+      webSecurity: true
     },
     backgroundColor: '#ffffff',
     show: false,

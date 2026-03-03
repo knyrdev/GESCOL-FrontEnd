@@ -1,168 +1,168 @@
-{
-  "name": "GESCOL",
-  "version": "1.0.0",
-  "description": "GESCOL - Sistema de Gestión Escolar",
-  "homepage": ".",
-  "main": "main.js",
-  "bugs": {
-    "url": "https://github.com/coreui/coreui-free-react-admin-template/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:coreui/coreui-free-react-admin-template.git"
-  },
-  "license": "MIT",
-  "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
-  "scripts": {
-    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "build": "vite build",
-    "lint": "eslint \"src/**/*.js\"",
-    "serve": "vite preview",
-    "start": "vite",
-    "electron": "electron .",
-    "build-electron": "npm run build && electron-builder",
-    "build-electron:win": "npm run build && electron-builder --win",
-    "build-electron:linux": "npm run build && electron-builder --linux",
-    "build-electron:all": "npm run build && electron-builder --win --linux",
-    "pack": "electron-builder --dir",
-    "dist": "npm run build && electron-builder"
-  },
-  "build": {
-    "appId": "com.gescol.frontend",
-    "productName": "GESCOL",
-    "copyright": "Copyright © 2026 GESCOL - Sistema de Gestión Escolar",
-    "asar": true,
-    "compression": "maximum",
-    "directories": {
-      "output": "dist-electron"
+  {
+    "name": "GESCOL",
+    "version": "1.0.0",
+    "description": "GESCOL - Sistema de Gestión Escolar",
+    "homepage": ".",
+    "main": "main.js",
+    "bugs": {
+      "url": "https://github.com/coreui/coreui-free-react-admin-template/issues"
     },
-    "files": [
-      "build/**/*",
-      "main.js",
-      "package.json",
-      "public/icon.png",
-      "!**/node_modules/**/*",
-      "!**/*.map"
-    ],
-    "extraMetadata": {
-      "main": "main.js"
+    "repository": {
+      "type": "git",
+      "url": "git@github.com:coreui/coreui-free-react-admin-template.git"
     },
-    "win": {
-      "icon": "public/favicon.ico",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+    "license": "MIT",
+    "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
+    "scripts": {
+      "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+      "build": "vite build",
+      "lint": "eslint \"src/**/*.js\"",
+      "serve": "vite preview",
+      "start": "vite",
+      "electron": "electron .",
+      "build-electron": "npm run build && electron-builder",
+      "build-electron:win": "npm run build && electron-builder --win",
+      "build-electron:linux": "npm run build && electron-builder --linux",
+      "build-electron:all": "npm run build && electron-builder --win --linux",
+      "pack": "electron-builder --dir",
+      "dist": "npm run build && electron-builder"
+    },
+    "build": {
+      "appId": "com.gescol.frontend",
+      "productName": "GESCOL",
+      "copyright": "Copyright © 2026 GESCOL - Sistema de Gestión Escolar",
+      "asar": true,
+      "compression": "maximum",
+      "directories": {
+        "output": "dist-electron"
+      },
+      "files": [
+        "build/**/*",
+        "main.js",
+        "package.json",
+        "public/icon.png",
+        "!**/node_modules/**/*",
+        "!**/*.map"
       ],
-      "verifyUpdateCodeSignature": false,
-      "requestedExecutionLevel": "asInvoker",
-      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+      "extraMetadata": {
+        "main": "main.js"
+      },
+      "win": {
+        "icon": "public/favicon.ico",
+        "target": [
+          {
+            "target": "nsis",
+            "arch": [
+              "x64",
+              "ia32"
+            ]
+          },
+          {
+            "target": "portable",
+            "arch": [
+              "x64"
+            ]
+          }
+        ],
+        "verifyUpdateCodeSignature": false,
+        "requestedExecutionLevel": "asInvoker",
+        "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+      },
+      "nsis": {
+        "oneClick": false,
+        "perMachine": false,
+        "allowToChangeInstallationDirectory": true,
+        "deleteAppDataOnUninstall": false,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "GESCOL",
+        "runAfterFinish": true,
+        "menuCategory": true,
+        "allowElevation": true,
+        "displayLanguageSelector": false,
+        "installerLanguages": [
+          "es_ES",
+          "en_US"
+        ]
+      },
+      "portable": {
+        "artifactName": "${productName}-${version}-portable.${ext}"
+      },
+      "linux": {
+        "icon": "public/icon.png",
+        "executableName": "gescol",
+        "target": [
+          {
+            "target": "AppImage",
+            "arch": [
+              "x64"
+            ]
+          },
+          {
+            "target": "deb",
+            "arch": [
+              "x64"
+            ]
+          }
+        ],
+        "category": "Education",
+        "maintainer": "GESCOL Team <gescol@example.com>",
+        "vendor": "GESCOL",
+        "synopsis": "Sistema de Gestión Escolar",
+        "description": "GESCOL - Sistema integral de gestión escolar para instituciones educativas",
+        "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+      },
+      "appImage": {
+        "category": "Education",
+        "artifactName": "${productName}-${version}.${ext}"
+      },
+      "deb": {
+        "priority": "optional"
+      },
+      "mac": {
+        "target": [
+          "dmg",
+          "zip"
+        ],
+        "category": "public.app-category.education"
+      }
     },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "GESCOL",
-      "runAfterFinish": true,
-      "menuCategory": true,
-      "allowElevation": true,
-      "displayLanguageSelector": false,
-      "installerLanguages": [
-        "es_ES",
-        "en_US"
-      ]
+    "dependencies": {
+      "@coreui/chartjs": "^4.0.0",
+      "@coreui/coreui": "^5.1.2",
+      "@coreui/icons": "^3.0.1",
+      "@coreui/icons-react": "^2.3.0",
+      "@coreui/react": "^5.4.0",
+      "@coreui/react-chartjs": "^3.0.0",
+      "@coreui/utils": "^2.0.2",
+      "@popperjs/core": "^2.11.8",
+      "chart.js": "^4.4.4",
+      "classnames": "^2.5.1",
+      "core-js": "^3.38.1",
+      "electron-is-dev": "^3.0.1",
+      "prop-types": "^15.8.1",
+      "react": "^18.3.1",
+      "react-dom": "^18.3.1",
+      "react-redux": "^9.1.2",
+      "react-router-dom": "^6.26.2",
+      "redux": "5.0.1",
+      "simplebar-react": "^3.2.6"
     },
-    "portable": {
-      "artifactName": "${productName}-${version}-portable.${ext}"
-    },
-    "linux": {
-      "icon": "public/icon.png",
-      "executableName": "gescol",
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "category": "Education",
-      "maintainer": "GESCOL Team <gescol@example.com>",
-      "vendor": "GESCOL",
-      "synopsis": "Sistema de Gestión Escolar",
-      "description": "GESCOL - Sistema integral de gestión escolar para instituciones educativas",
-      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
-    },
-    "appImage": {
-      "category": "Education",
-      "artifactName": "${productName}-${version}.${ext}"
-    },
-    "deb": {
-      "priority": "optional"
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "category": "public.app-category.education"
+    "devDependencies": {
+      "@vitejs/plugin-react": "^4.3.1",
+      "autoprefixer": "^10.4.20",
+      "concurrently": "^8.2.2",
+      "electron": "^38.0.0",
+      "electron-builder": "^26.0.12",
+      "eslint": "^8.57.0",
+      "eslint-config-prettier": "^9.1.0",
+      "eslint-plugin-prettier": "^5.2.1",
+      "eslint-plugin-react": "^7.36.1",
+      "eslint-plugin-react-hooks": "^4.6.2",
+      "postcss": "^8.4.47",
+      "prettier": "3.3.3",
+      "sass": "^1.79.3",
+      "vite": "^5.4.19",
+      "wait-on": "^7.2.0"
     }
-  },
-  "dependencies": {
-    "@coreui/chartjs": "^4.0.0",
-    "@coreui/coreui": "^5.1.2",
-    "@coreui/icons": "^3.0.1",
-    "@coreui/icons-react": "^2.3.0",
-    "@coreui/react": "^5.4.0",
-    "@coreui/react-chartjs": "^3.0.0",
-    "@coreui/utils": "^2.0.2",
-    "@popperjs/core": "^2.11.8",
-    "chart.js": "^4.4.4",
-    "classnames": "^2.5.1",
-    "core-js": "^3.38.1",
-    "electron-is-dev": "^3.0.1",
-    "prop-types": "^15.8.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-redux": "^9.1.2",
-    "react-router-dom": "^6.26.2",
-    "redux": "5.0.1",
-    "simplebar-react": "^3.2.6"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.20",
-    "concurrently": "^8.2.2",
-    "electron": "^38.0.0",
-    "electron-builder": "^26.0.12",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-react": "^7.36.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "postcss": "^8.4.47",
-    "prettier": "3.3.3",
-    "sass": "^1.79.3",
-    "vite": "^5.4.19",
-    "wait-on": "^7.2.0"
   }
-}
