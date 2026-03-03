@@ -50,14 +50,15 @@ import {
   cilPrint,
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch.js"
-
-const api = helpFetch()
+import { useError } from "../../../context/ErrorContext"
 
 const EstudianteList = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const [estudiantes, setEstudiantes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+
 
   // Estados para filtros y búsqueda
   const [searchTerm, setSearchTerm] = useState("")
@@ -100,20 +101,15 @@ const EstudianteList = () => {
   const loadEstudiantes = async () => {
     try {
       setLoading(true)
-      setError(null)
       console.log("🔄 Cargando estudiantes...")
       const response = await api.get("/api/students/list/all/")
 
-      if (response.ok) {
+      if (response && response.ok) {
         console.log("✅ Estudiantes cargados:", response.students)
         setEstudiantes(response.students || [])
-      } else {
-        console.error("❌ Error al cargar estudiantes:", response)
-        setError(response.msg || "Error al cargar estudiantes")
       }
     } catch (error) {
       console.error("❌ Error en loadEstudiantes:", error)
-      setError("Error al cargar estudiantes")
     } finally {
       setLoading(false)
     }
@@ -143,7 +139,6 @@ const EstudianteList = () => {
     setActiveTab("personal")
     setIsEditing(false)
     setShowModal(true)
-    setError(null)
     setSuccess(null)
   }
 
@@ -153,7 +148,6 @@ const EstudianteList = () => {
     setEditingData({})
     setActiveTab("personal")
     setIsEditing(false)
-    setError(null)
     setSuccess(null)
   }
 
@@ -169,7 +163,6 @@ const EstudianteList = () => {
     }
 
     try {
-      setError(null)
       setSuccess(null)
       setUpdateLoading(true)
 
@@ -179,21 +172,16 @@ const EstudianteList = () => {
 
       console.log("📥 Respuesta del servidor:", response)
 
-      // Verificar si la respuesta es exitosa
       if (response && (response.message || response.student || !response.msg)) {
         setSuccess(`Estudiante ${nombreCompleto} eliminado exitosamente`)
         await loadEstudiantes()
 
-        // Si se eliminó desde la modal, cerrarla
         if (fromModal) {
           handleCloseModal()
         }
-      } else {
-        setError(response?.msg || "Error al eliminar estudiante")
       }
     } catch (error) {
       console.error("❌ Error eliminando estudiante:", error)
-      setError(error.msg || "Error al eliminar estudiante")
     } finally {
       setUpdateLoading(false)
     }
@@ -203,7 +191,6 @@ const EstudianteList = () => {
   const handleEditMode = () => {
     setIsEditing(true)
     setEditingData({ ...selectedEstudiante })
-    setError(null)
     setSuccess(null)
   }
 
@@ -211,7 +198,6 @@ const EstudianteList = () => {
   const handleCancelEdit = () => {
     setIsEditing(false)
     setEditingData({ ...selectedEstudiante })
-    setError(null)
     setSuccess(null)
   }
 
@@ -227,7 +213,6 @@ const EstudianteList = () => {
   const handleUpdateEstudiante = async () => {
     try {
       setUpdateLoading(true)
-      setError(null)
       setSuccess(null)
 
       console.log("💾 Actualizando estudiante:", editingData)
@@ -264,7 +249,6 @@ const EstudianteList = () => {
 
       console.log("📥 Respuesta del servidor:", response)
 
-      // Verificar si la respuesta es exitosa
       if (response && (response.message || response.student || response.ok)) {
         setSuccess("Estudiante actualizado exitosamente")
         setIsEditing(false)
@@ -274,12 +258,9 @@ const EstudianteList = () => {
 
         // Recargar la lista
         await loadEstudiantes()
-      } else {
-        setError(response?.msg || response?.error || "Error al actualizar estudiante")
       }
     } catch (error) {
       console.error("❌ Error actualizando estudiante:", error)
-      setError(error.msg || error.error || "Error al actualizar estudiante")
     } finally {
       setUpdateLoading(false)
     }
@@ -330,7 +311,6 @@ const EstudianteList = () => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error("Error descargando PDF:", error)
-      setError("Error al generar el PDF")
     }
   }
 
@@ -349,7 +329,6 @@ const EstudianteList = () => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error("Error descargando PDF del estudiante:", error)
-      setError("Error al generar el PDF del estudiante")
     }
   }
 
@@ -362,18 +341,19 @@ const EstudianteList = () => {
     )
   }
 
+  // Assuming the component starts here and `useError` and `helpFetch` are imported
+  // Example imports (add these at the top of your file if not present):
+  // import { useState, useEffect } from 'react';
+  // import { helpFetch } from 'src/helpers/helpFetch'; // Adjust path as needed
+  // import { useError } from 'src/hooks/useError'; // Adjust path as needed
+
+  // Inside your functional component:
+  // const { showError, showSuccess } = useError();
+  // const api = helpFetch(showError, showSuccess); // Pass both showError and showSuccess
+
   return (
     <>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          <strong>Error:</strong> {error}
-        </CAlert>
-      )}
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          <strong>Éxito:</strong> {success}
-        </CAlert>
-      )}
+      {/* Removed local alerts */}
 
       <CCard>
         <CCardHeader className="d-flex justify-content-between align-items-center bg-primary text-white">
@@ -517,16 +497,7 @@ const EstudianteList = () => {
         <CModalBody>
           {selectedEstudiante && (
             <>
-              {error && (
-                <CAlert color="danger" dismissible onClose={() => setError(null)}>
-                  {error}
-                </CAlert>
-              )}
-              {success && (
-                <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-                  {success}
-                </CAlert>
-              )}
+              {/* Removed local alerts */}
 
               {/* Header con información básica */}
               <div className="mb-4 p-3 bg-light rounded">

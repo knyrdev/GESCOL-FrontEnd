@@ -2,7 +2,7 @@
 
 import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton, CAlert } from "@coreui/react"
 import CIcon from "@coreui/icons-react"
-import { cilWarning, cilBug, cilShieldAlt} from "@coreui/icons"
+import { cilWarning, cilXCircle, cilLockLocked } from "@coreui/icons"
 
 export default function ErrorModal({ visible, onClose, error }) {
   if (!error) return null
@@ -10,13 +10,13 @@ export default function ErrorModal({ visible, onClose, error }) {
   const getErrorIcon = () => {
     switch (error.type) {
       case "server":
-        return cilBug
+        return cilXCircle
       case "validation":
         return cilWarning
       case "auth":
-        return cilShieldAlt
+        return cilLockLocked
       case "network":
-        return cilWifiOff
+        return cilWarning
       default:
         return cilWarning
     }

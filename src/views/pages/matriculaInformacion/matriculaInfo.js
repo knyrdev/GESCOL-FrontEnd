@@ -62,13 +62,13 @@ import {
   cilPrint,
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch.js"
-
-const api = helpFetch()
+import { useError } from "../../../context/ErrorContext"
 
 const MatriculasList = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const [matriculas, setMatriculas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
   // Estados para filtros y búsqueda
@@ -128,20 +128,15 @@ const MatriculasList = () => {
   const loadMatriculas = async () => {
     try {
       setLoading(true)
-      setError(null)
       console.log("🔄 Cargando matrículas...")
       const response = await api.get("/api/matriculas/all")
 
-      if (response.ok) {
+      if (response && response.ok) {
         console.log("✅ Matrículas cargadas:", response.inscriptions)
         setMatriculas(response.inscriptions || [])
-      } else {
-        console.error("❌ Error al cargar matrículas:", response)
-        setError(response.msg || "Error al cargar matrículas")
       }
     } catch (error) {
       console.error("❌ Error en loadMatriculas:", error)
-      setError("Error al cargar matrículas")
     } finally {
       setLoading(false)
     }
@@ -204,7 +199,6 @@ const MatriculasList = () => {
     setActiveTab("estudiante")
     setIsEditing(false)
     setShowModal(true)
-    setError(null)
     setSuccess(null)
   }
 
@@ -214,21 +208,19 @@ const MatriculasList = () => {
     setEditingData({})
     setActiveTab("estudiante")
     setIsEditing(false)
-    setError(null)
     setSuccess(null)
   }
 
   const handleCreateMatricula = async () => {
     try {
       setUpdateLoading(true)
-      setError(null)
       setSuccess(null)
 
       console.log("📝 Creando nueva matrícula:", createData)
 
       const response = await api.post("/api/matriculas/inscription", { body: createData })
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess("Matrícula creada exitosamente")
         setShowCreateModal(false)
         setCreateData({
@@ -252,12 +244,9 @@ const MatriculasList = () => {
           autorizedCopyIDCheck: false,
         })
         await loadMatriculas()
-      } else {
-        setError(response.msg || "Error al crear matrícula")
       }
     } catch (error) {
       console.error("❌ Error creando matrícula:", error)
-      setError(error.msg || "Error al crear matrícula")
     } finally {
       setUpdateLoading(false)
     }
@@ -266,7 +255,6 @@ const MatriculasList = () => {
   const handleUpdateMatricula = async () => {
     try {
       setUpdateLoading(true)
-      setError(null)
       setSuccess(null)
 
       console.log("💾 Actualizando matrícula y datos del estudiante:", editingData)
@@ -323,17 +311,14 @@ const MatriculasList = () => {
 
       const response = await api.put("/api/matriculas", { body: matriculaData }, editingData.id)
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess("Matrícula y datos del estudiante actualizados exitosamente")
         setIsEditing(false)
         setSelectedMatricula({ ...selectedMatricula, ...editingData })
         await loadMatriculas()
-      } else {
-        setError(response.msg || "Error al actualizar matrícula")
       }
     } catch (error) {
       console.error("❌ Error actualizando matrícula:", error)
-      setError(error.msg || "Error al actualizar matrícula")
     } finally {
       setUpdateLoading(false)
     }
@@ -348,7 +333,6 @@ const MatriculasList = () => {
     }
 
     try {
-      setError(null)
       setSuccess(null)
       setUpdateLoading(true)
 
@@ -363,12 +347,9 @@ const MatriculasList = () => {
         if (fromModal) {
           handleCloseModal()
         }
-      } else {
-        setError(response?.msg || "Error al eliminar matrícula")
       }
     } catch (error) {
       console.error("❌ Error eliminando matrícula:", error)
-      setError(error.msg || "Error al eliminar matrícula")
     } finally {
       setUpdateLoading(false)
     }
@@ -377,14 +358,12 @@ const MatriculasList = () => {
   const handleEditMode = () => {
     setIsEditing(true)
     setEditingData({ ...selectedMatricula })
-    setError(null)
     setSuccess(null)
   }
 
   const handleCancelEdit = () => {
     setIsEditing(false)
     setEditingData({ ...selectedMatricula })
-    setError(null)
     setSuccess(null)
   }
 
@@ -471,7 +450,6 @@ const MatriculasList = () => {
       setSuccess(`PDF del grado ${gradeName} descargado exitosamente`)
     } catch (error) {
       console.error("❌ Error descargando PDF del grado:", error)
-      setError(`Error al generar el PDF del grado ${gradeName}`)
     }
   }
 
@@ -493,7 +471,6 @@ const MatriculasList = () => {
       setSuccess("PDF de todos los estudiantes matriculados descargado exitosamente")
     } catch (error) {
       console.error("❌ Error descargando PDF de todos los estudiantes:", error)
-      setError("Error al generar el PDF de todos los estudiantes matriculados")
     }
   }
 
@@ -517,27 +494,6 @@ const MatriculasList = () => {
 
   return (
     <>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)} className="mb-4">
-          <div className="d-flex align-items-center">
-            <CIcon icon={cilXCircle} className="me-2" />
-            <div>
-              <strong>Error:</strong> {error}
-            </div>
-          </div>
-        </CAlert>
-      )}
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)} className="mb-4">
-          <div className="d-flex align-items-center">
-            <CIcon icon={cilCheckCircle} className="me-2" />
-            <div>
-              <strong>Éxito:</strong> {success}
-            </div>
-          </div>
-        </CAlert>
-      )}
-
       <CCard className="shadow-lg border-0">
         <CCardHeader className="bg-gradient-primary text-white border-0">
           <div className="d-flex justify-content-between align-items-center">
@@ -1104,12 +1060,7 @@ const MatriculasList = () => {
         <CModalBody className="p-0">
           {selectedMatricula && (
             <>
-              {error && (
-                <CAlert color="danger" dismissible onClose={() => setError(null)} className="m-4 mb-0">
-                  <CIcon icon={cilXCircle} className="me-2" />
-                  {error}
-                </CAlert>
-              )}
+
               {success && (
                 <CAlert color="success" dismissible onClose={() => setSuccess(null)} className="m-4 mb-0">
                   <CIcon icon={cilCheckCircle} className="me-2" />

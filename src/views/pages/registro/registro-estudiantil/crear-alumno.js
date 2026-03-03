@@ -23,17 +23,16 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilUser, cilSearch, cilUserPlus, cilPhone, cilHome, cilCalendar, cilCheckCircle } from "@coreui/icons"
 import { helpFetch } from "../../../../api/helpFetch"
-import ErrorModal from "../../../../components/error-modal"
-import { useErrorHandler } from "../../../hooks/use-error-handler"
+import { useError } from "../../../../context/ErrorContext"
 import CedulaInput from "../../../../components/cedula-input"
 
 export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated, onBack }) {
+  const { showError } = useError()
   const [step, setStep] = useState(1) // 1: Buscar/Crear Representante, 2: Crear Estudiante
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
-  const { error, showErrorModal, handleError, clearError } = useErrorHandler()
 
-  // Estados para representante
+  const api = helpFetch(showError)
   const [representanteCi, setRepresentanteCi] = useState("")
   const [representanteFound, setRepresentanteFound] = useState(null)
   const [representanteData, setRepresentanteData] = useState({
@@ -75,18 +74,15 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
     rolRopresentative: "",
   })
 
-  const api = helpFetch()
+
 
   // Buscar representante por CI
   const buscarRepresentante = async () => {
     if (!representanteCi.trim()) {
-      handleError(
-        {
-          type: "validation",
-          message: "Ingrese la cédula del representante",
-        },
-        "Validación de cédula",
-      )
+      showError({
+        type: "validation",
+        msg: "Ingrese la cédula del representante",
+      })
       return
     }
 
@@ -118,13 +114,10 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
   const crearRepresentante = async () => {
     // Validaciones
     if (!representanteData.name || !representanteData.lastName || !representanteData.telephoneNumber) {
-      handleError(
-        {
-          type: "validation",
-          message: "Complete todos los campos obligatorios del representante (Nombres, Apellidos, Teléfono)",
-        },
-        "Validación de campos obligatorios",
-      )
+      showError({
+        type: "validation",
+        msg: "Complete todos los campos obligatorios del representante (Nombres, Apellidos, Teléfono)",
+      })
       return
     }
 
@@ -143,7 +136,6 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
       }
     } catch (err) {
       console.error("Error creando representante:", err)
-      handleError(err, "Crear representante")
     } finally {
       setLoading(false)
     }
@@ -153,14 +145,10 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
   const crearEstudiante = async () => {
     // Validaciones
     if (!studentData.ci || !studentData.name || !studentData.lastName || !studentData.birthday) {
-      handleError(
-        {
-          type: "validation",
-          message:
-            "Complete todos los campos obligatorios del estudiante (Cédula, Nombres, Apellidos, Fecha de Nacimiento)",
-        },
-        "Validación de campos obligatorios",
-      )
+      showError({
+        type: "validation",
+        msg: "Complete todos los campos obligatorios del estudiante (Cédula, Nombres, Apellidos, Fecha de Nacimiento)",
+      })
       return
     }
 
@@ -179,7 +167,6 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
       }
     } catch (err) {
       console.error("Error creando estudiante:", err)
-      handleError(err, "Crear estudiante")
     } finally {
       setLoading(false)
     }
@@ -199,8 +186,7 @@ export default function CrearAlumnoEnhanced({ tipoInscripcion, onStudentCreated,
           </CAlert>
         )}
 
-        {/* Modal de Error */}
-        <ErrorModal visible={showErrorModal} onClose={clearError} error={error} />
+
 
         {step === 1 && (
           <CCard>

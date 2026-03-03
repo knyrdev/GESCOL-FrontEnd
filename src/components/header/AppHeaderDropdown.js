@@ -13,10 +13,11 @@ import CIcon from '@coreui/icons-react'
 import avatar8 from './../../assets/images/avatars/8.jpg'
 import { useNavigate } from 'react-router-dom'
 import { helpFetch } from '../../api/helpFetch.js'
-
-const api = helpFetch()
+import { useError } from '../../context/ErrorContext'
 
 const AppHeaderDropdown = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -32,7 +33,7 @@ const AppHeaderDropdown = () => {
 
         navigate('/login')
       } else {
-        alert('Failed to logout. Please try again.')
+        // Error will be handled by global modal
       }
     } catch (error) {
       console.error('Error during logout:', error)

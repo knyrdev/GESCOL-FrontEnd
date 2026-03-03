@@ -17,28 +17,24 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilSearch, cilUser, cilPhone, cilHome, cilWarning, cilCheckCircle } from "@coreui/icons"
 import { helpFetch } from "../../../../api/helpFetch"
-import ErrorModal from "../../../../components/error-modal"
-import { useErrorHandler } from "../../../hooks/use-error-handler"
 import CedulaInput from "../../../../components/cedula-input"
+import { useError } from "../../../../context/ErrorContext"
 
 export default function BuscarEstudianteEnhanced({ tipoInscripcion, onStudentFound, onBack }) {
+  const { showError } = useError()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
-  const { error, showErrorModal, handleError, clearError } = useErrorHandler()
   const [studentCi, setStudentCi] = useState("")
   const [studentFound, setStudentFound] = useState(null)
 
-  const api = helpFetch()
+  const api = helpFetch(showError)
 
   const buscarEstudiante = async () => {
     if (!studentCi.trim()) {
-      handleError(
-        {
-          type: "validation",
-          message: "Ingrese la cédula del estudiante",
-        },
-        "Validación de cédula",
-      )
+      showError({
+        type: "validation",
+        msg: "Ingrese la cédula del estudiante",
+      })
       return
     }
 
@@ -51,28 +47,21 @@ export default function BuscarEstudianteEnhanced({ tipoInscripcion, onStudentFou
 
       if (response && response.ok) {
         setStudentFound(response.student)
-        setSuccess("Estudiante encontrado exitosamente")
         console.log("✅ Estudiante encontrado:", response.student)
       } else {
         setStudentFound(null)
-        throw new Error("Estudiante no encontrado en el sistema")
       }
     } catch (err) {
       console.error("❌ Error buscando estudiante:", err)
       setStudentFound(null)
-      handleError(err, "Búsqueda de estudiante")
     } finally {
       setLoading(false)
     }
   }
 
   const handleContinue = () => {
-    try {
-      if (studentFound) {
-        onStudentFound(studentFound)
-      }
-    } catch (err) {
-      handleError(err, "Continuar con estudiante")
+    if (studentFound) {
+      onStudentFound(studentFound)
     }
   }
 
@@ -158,15 +147,7 @@ export default function BuscarEstudianteEnhanced({ tipoInscripcion, onStudentFou
           </p>
         </div>
 
-        {success && (
-          <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-            <CIcon icon={cilCheckCircle} className="me-2" />
-            {success}
-          </CAlert>
-        )}
-
-        {/* Modal de Error */}
-        <ErrorModal visible={showErrorModal} onClose={clearError} error={error} />
+        {/* Success alert removed */}
 
         <CCard className="shadow">
           <CCardHeader className="bg-primary text-white">

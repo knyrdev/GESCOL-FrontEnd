@@ -40,14 +40,14 @@ import {
   cilReload,
 } from '@coreui/icons'
 import { helpFetch } from '../../../api/helpFetch.js'
-
-const api = helpFetch()
+import { useError } from '../../../context/ErrorContext'
 
 const UserManagement = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   // Estados principales
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
   // Estados para búsqueda y paginación
@@ -96,15 +96,12 @@ const UserManagement = () => {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      setError(null)
       const response = await api.get('/api/user/list')
-      if (!response.error) {
+      if (response && !response.error) {
         setUsers(response.users)
-      } else {
-        setError(response.msg || 'Error al cargar usuarios')
       }
     } catch (error) {
-      setError(`Error al cargar usuarios: ${error.message}`)
+      console.error(`Error al cargar usuarios: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -126,7 +123,6 @@ const UserManagement = () => {
 
     try {
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       const response = await api.post('/api/user/register', {
@@ -139,17 +135,14 @@ const UserManagement = () => {
         },
       })
 
-      if (response.error) {
-        setError(response.msg || 'Error al crear el usuario')
-        return
+      if (response && !response.error) {
+        setSuccess('Usuario creado exitosamente')
+        setShowCreateModal(false)
+        loadUsers()
+        resetForm()
       }
-
-      setSuccess('Usuario creado exitosamente')
-      setShowCreateModal(false)
-      loadUsers()
-      resetForm()
     } catch (error) {
-      setError(`Error al crear usuario: ${error.message}`)
+      console.error(`Error al crear usuario: ${error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -157,20 +150,17 @@ const UserManagement = () => {
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     try {
-      setError(null)
       setSuccess(null)
       const response = await api.put(`/api/user/status/${userId}`, {
         body: { isActive: !currentStatus }
       })
 
-      if (!response.error) {
+      if (response && !response.error) {
         setSuccess(`Usuario ${currentStatus ? 'desactivado' : 'activado'} exitosamente`)
         loadUsers()
-      } else {
-        setError(response.msg || 'Error al cambiar estado')
       }
     } catch (error) {
-      setError(`Error al cambiar estado: ${error.message}`)
+      console.error(`Error al cambiar estado: ${error.message}`)
     }
   }
 
@@ -178,18 +168,15 @@ const UserManagement = () => {
     if (!selectedUser) return
     try {
       setIsSubmitting(true)
-      setError(null)
       const response = await api.delet('/api/user', selectedUser.id)
-      if (!response.error) {
+      if (response && !response.error) {
         setSuccess('Usuario eliminado exitosamente')
         setShowDeleteModal(false)
         setSelectedUser(null)
         loadUsers()
-      } else {
-        setError(response.msg || 'Error al eliminar usuario')
       }
     } catch (error) {
-      setError(`Error al eliminar usuario: ${error.message}`)
+      console.error(`Error al eliminar usuario: ${error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -228,17 +215,6 @@ const UserManagement = () => {
 
   return (
     <>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          {error}
-        </CAlert>
-      )}
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          {success}
-        </CAlert>
-      )}
-
       <CCard>
         <CCardHeader className="d-flex justify-content-between align-items-center bg-info text-white">
           <h5 className="mb-0">

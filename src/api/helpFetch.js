@@ -1,4 +1,4 @@
-export const helpFetch = () => {
+export const helpFetch = (showError = null) => {
   const URL = 'http://localhost:3001'
 
   const customFetch = (endpoint, options = {}) => {
@@ -22,10 +22,14 @@ export const helpFetch = () => {
           return data // OK, devolver data directamente
         } else {
           // Rechazar con data para que contenga el msg del backend
+          if (showError) showError(data)
           return Promise.reject(data)
         }
       })
-      .catch((error) => error)
+      .catch((error) => {
+        if (showError && !error.ok) showError(error)
+        return error
+      })
   }
 
   const get = (endpoint) => customFetch(endpoint)
@@ -59,12 +63,16 @@ export const helpFetch = () => {
         },
       })
 
-      if (!response.ok) throw new Error('Error al descargar el archivo')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw errorData.msg ? errorData : new Error('Error al descargar el archivo')
+      }
 
       const blob = await response.blob()
       return blob
     } catch (error) {
       console.error('Error al descargar archivo:', error)
+      if (showError) showError(error)
       throw error
     }
   }

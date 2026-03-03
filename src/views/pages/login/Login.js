@@ -15,12 +15,13 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 import { helpFetch } from '../../../api/helpFetch'
+import { useError } from '../../../context/ErrorContext'
 
 import loginBackground from '/src/assets/brand/fondologin.jpg'
 
-const api = helpFetch()
-
 const Login = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -35,9 +36,7 @@ const Login = () => {
     personalId: null,
   })
 
-  const [visiblePassError, setVisiblePassError] = useState(false)
-  const [visibleUserError, setVisibleUserError] = useState(false)
-  const [visibleGenericError, setVisibleGenericError] = useState(false)
+
   const [showRecoverModal, setShowRecoverModal] = useState(false)
   const [recoverStep, setRecoverStep] = useState(1) // 1: username, 2: answer & new pass
   const [recoverData, setRecoverData] = useState({
@@ -65,19 +64,11 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(response.user))
         navigate('/dashboard')
       } else {
-        const msg = response.msg?.toLowerCase() || ''
-
-        if (msg.includes('contraseña') || msg.includes('password')) {
-          setVisiblePassError(true)
-        } else if (msg.includes('usuario') || msg.includes('username') || msg.includes('credentials')) {
-          setVisibleUserError(true)
-        } else {
-          setVisibleGenericError(true)
-        }
+        // helpFetch now calls showError(response) automatically if response is not ok
+        // but we still want to stop loading
       }
     } catch (err) {
       console.error('Error de conexión', err)
-      setVisibleGenericError(true)
     } finally {
       setLoading(false)
     }
@@ -88,7 +79,12 @@ const Login = () => {
     setLoading(true)
 
     if (passwordMismatch || isPasswordInvalid) {
-      setVisibleGenericError(true)
+      showError({
+        type: 'validation',
+        msg: passwordMismatch
+          ? 'Las contraseñas no coinciden'
+          : 'La contraseña debe tener al menos 8 caracteres',
+      })
       setLoading(false)
       return
     }
@@ -109,12 +105,10 @@ const Login = () => {
           securityAnswer: '',
           personalId: null,
         })
-      } else {
-        setVisibleGenericError(true)
+        // helpFetch already calls showError
       }
     } catch (err) {
       console.error('Error en el registro', err)
-      setVisibleGenericError(true)
     } finally {
       setLoading(false)
     }
@@ -127,11 +121,9 @@ const Login = () => {
       if (response.ok) {
         setRecoverData({ ...recoverData, securityWord: response.securityWord })
         setRecoverStep(2)
-      } else {
-        setVisibleUserError(true)
       }
     } catch (err) {
-      setVisibleGenericError(true)
+      console.error('Error obteniendo pregunta de seguridad:', err)
     } finally {
       setLoading(false)
     }
@@ -151,11 +143,9 @@ const Login = () => {
         setShowRecoverModal(false)
         setRecoverStep(1)
         alert('Contraseña restablecida con éxito')
-      } else {
-        setVisibleGenericError(true)
       }
     } catch (err) {
-      setVisibleGenericError(true)
+      console.error('Error recuperando contraseña:', err)
     } finally {
       setLoading(false)
     }
@@ -352,50 +342,7 @@ const Login = () => {
         </CForm>
       </div>
 
-      {/* Modal Contraseña Incorrecta */}
-      <CModal visible={visiblePassError} onClose={() => setVisiblePassError(false)}>
-        <CModalHeader className="bg-warning text-white">
-          <CModalTitle>Error de contraseña</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <p>La contraseña ingresada es incorrecta.</p>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="danger" onClick={() => setVisiblePassError(false)}>
-            Cerrar
-          </CButton>
-        </CModalFooter>
-      </CModal>
 
-      {/* Modal Usuario Incorrecto */}
-      <CModal visible={visibleUserError} onClose={() => setVisibleUserError(false)}>
-        <CModalHeader className="bg-danger text-white">
-          <CModalTitle>Error de usuario</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <p>El nombre de usuario no es válido o no está registrado.</p>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="danger" onClick={() => setVisibleUserError(false)}>
-            Cerrar
-          </CButton>
-        </CModalFooter>
-      </CModal>
-
-      {/* Modal Error Genérico */}
-      <CModal visible={visibleGenericError} onClose={() => setVisibleGenericError(false)}>
-        <CModalHeader className="bg-secondary text-white">
-          <CModalTitle>Error</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <p>Ocurrió un error al procesar la solicitud. Inténtalo nuevamente.</p>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="dark" onClick={() => setVisibleGenericError(false)}>
-            Cerrar
-          </CButton>
-        </CModalFooter>
-      </CModal>
 
       {/* Modal Recuperar Contraseña */}
       <CModal visible={showRecoverModal} onClose={() => setShowRecoverModal(false)}>

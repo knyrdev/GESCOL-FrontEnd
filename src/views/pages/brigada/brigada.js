@@ -56,12 +56,12 @@ import {
   cilPrint,
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch"
+import { useError } from "../../../context/ErrorContext"
 
 const BrigadeManagement = () => {
   // Estados principales
   const [brigades, setBrigades] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
   // Estados para períodos académicos
@@ -114,7 +114,8 @@ const BrigadeManagement = () => {
   const [toasts, setToasts] = useState([])
 
   // Instancia de API
-  const api = helpFetch()
+  const { showError } = useError()
+  const api = helpFetch(showError)
 
   // Función para agregar toast
   const addToast = (message, color = "success") => {
@@ -165,7 +166,6 @@ const BrigadeManagement = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       console.log("🔄 Cargando datos iniciales...")
 
@@ -183,7 +183,6 @@ const BrigadeManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error cargando datos iniciales:", error)
-      setError(`Error al cargar datos iniciales: ${error.msg || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -191,7 +190,6 @@ const BrigadeManagement = () => {
 
   const loadBrigades = async () => {
     try {
-      setError(null)
 
       console.log("🔄 Cargando brigadas para período:", selectedPeriod)
 
@@ -206,7 +204,6 @@ const BrigadeManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error cargando brigadas:", error)
-      setError(`Error al cargar brigadas: ${error.msg || error.message}`)
     }
   }
 
@@ -284,7 +281,6 @@ const BrigadeManagement = () => {
       if (!validateBrigadeForm()) return
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("➕ Creando brigada...")
 
@@ -314,7 +310,6 @@ const BrigadeManagement = () => {
       if (!validateBrigadeForm()) return
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("✏️ Actualizando brigada...")
 
@@ -348,7 +343,6 @@ const BrigadeManagement = () => {
       if (!selectedBrigade) return
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("🗑️ Eliminando brigada...")
 
@@ -380,7 +374,6 @@ const BrigadeManagement = () => {
       }
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("👨‍🏫 Asignando docente...")
 
@@ -418,7 +411,6 @@ const BrigadeManagement = () => {
       }
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("👥 Inscribiendo estudiantes...")
 
@@ -459,8 +451,6 @@ const BrigadeManagement = () => {
         return
       }
 
-      setError(null)
-
       console.log("🧹 Limpiando brigada...")
 
       const response = await api.post(`/api/brigadas/${brigade.id}/students`, {
@@ -493,8 +483,6 @@ const BrigadeManagement = () => {
       ) {
         return
       }
-
-      setError(null)
 
       console.log("👨‍🏫 Removiendo docente...")
 
@@ -668,17 +656,7 @@ const BrigadeManagement = () => {
       </CToaster>
 
       {/* Alertas */}
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)} className="mb-4">
-          <strong>❌ Error:</strong> {error}
-        </CAlert>
-      )}
-
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)} className="mb-4">
-          <strong>✅ Éxito:</strong> {success}
-        </CAlert>
-      )}
+      {/* Removed error and success alerts as per instruction */}
 
       {/* Selector de Período Académico */}
       <CCard className="mb-4 border-primary">

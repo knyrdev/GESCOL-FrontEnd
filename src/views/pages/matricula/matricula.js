@@ -28,13 +28,13 @@ import CIcon from '@coreui/icons-react'
 import { cilSearch, cilPencil, cilTrash, cilReload } from '@coreui/icons'
 import { helpFetch } from '../../../api/helpFetch.js'
 import MatriculaInfo from '../../pages/matriculaInformacion/matriculaInfo.js'
-
-const api = helpFetch()
+import { useError } from '../../../context/ErrorContext'
 
 const MatriculaList = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const [matriculas, setMatriculas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
   // Estados para filtros y búsqueda
@@ -56,21 +56,21 @@ const MatriculaList = () => {
   const [periodos, setPeriodos] = useState([])
 
   useEffect(() => {
-    // Extraemos grados únicos de las matrículas
-    const uniqueGrades = [...new Set(matriculas.map((m) => m.grade_id))]
+    loadMatriculas()
+    loadPeriodos()
+    loadGrades()
+  }, [])
 
-    // Luego mapeamos a objetos con id y nombre (busca el nombre del grado desde matricula)
-    const gradesList = uniqueGrades.map((gradeId) => {
-      // Busca la primera matricula con este gradeId para obtener el nombre
-      const matricula = matriculas.find((m) => m.grade_id === gradeId)
-      return {
-        id: gradeId,
-        name: matricula?.grade_name || `Grado ${gradeId}`,
+  const loadGrades = async () => {
+    try {
+      const response = await api.get('/api/matriculas/grades')
+      if (response.ok) {
+        setGrades(response.grades || [])
       }
-    })
-
-    setGrades(gradesList)
-  }, [matriculas])
+    } catch (error) {
+      console.error('❌ Error cargando grados:', error)
+    }
+  }
 
   // Función para asignar colores a los grados
   const getGradeColor = (gradeName) => {
@@ -108,10 +108,7 @@ const MatriculaList = () => {
     // Color por defecto
   }
 
-  useEffect(() => {
-    loadMatriculas()
-    loadPeriodos()
-  }, [])
+
 
   useEffect(() => {
     filterMatriculas()
@@ -120,19 +117,14 @@ const MatriculaList = () => {
   const loadMatriculas = async () => {
     try {
       setLoading(true)
-      setError(null)
       console.log('🔄 Cargando matrículas...')
       const response = await api.get('/api/matriculas/all')
-      if (response.ok) {
-        console.log('✅ Matrículas cargadas:', response.matriculas)
+      if (response && response.ok) {
+        console.log('✅ Matrículas cargadas:', response.inscriptions)
         setMatriculas(response.inscriptions || [])
-      } else {
-        console.error('❌ Error al cargar matrículas:', response)
-        setError(response.msg || 'Error al cargar matrículas')
       }
     } catch (error) {
       console.error('❌ Error en loadMatriculas:', error)
-      setError('Error al cargar matrículas')
     } finally {
       setLoading(false)
     }
@@ -180,18 +172,14 @@ const MatriculaList = () => {
     }
 
     try {
-      setError(null)
       setSuccess(null)
       const response = await api.delet('/api/matriculas', matriculaId)
       if (response.ok) {
         setSuccess('Matrícula eliminada exitosamente')
         await loadMatriculas()
-      } else {
-        setError(response.msg || 'Error al eliminar matrícula')
       }
     } catch (error) {
       console.error('❌ Error eliminando matrícula:', error)
-      setError('Error al eliminar matrícula')
     }
   }
 
@@ -236,7 +224,10 @@ const MatriculaList = () => {
   const handleDownloadPdfByGrade = async () => {
     try {
       if (!selectedGradeId) {
-        setError('Por favor, seleccione un grado')
+        showError({
+          type: 'validation',
+          msg: 'Por favor, seleccione un grado'
+        })
         return
       }
 
@@ -256,23 +247,11 @@ const MatriculaList = () => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error descargando PDF por grado:', error)
-      setError('Error al descargar el PDF del grado')
     }
   }
 
   return (
     <>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          <strong>Error:</strong> {error}
-        </CAlert>
-      )}
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          <strong>Éxito:</strong> {success}
-        </CAlert>
-      )}
-
       <CCard>
         <CCardHeader className="d-flex justify-content-between align-items-center bg-info text-white">
           <h5 className="mb-0">Gestión de Matrículas</h5>

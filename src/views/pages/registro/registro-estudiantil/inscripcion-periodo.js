@@ -26,6 +26,7 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilSchool, cilCheckCircle, cilWarning, cilInfo } from "@coreui/icons"
 import { helpFetch } from "../../../../api/helpFetch"
+import { useError } from "../../../../context/ErrorContext"
 
 export default function InscripcionPeriodo({
   student,
@@ -34,9 +35,10 @@ export default function InscripcionPeriodo({
   onInscriptionCompleted,
   onBack,
 }) {
+  const { showError } = useError()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const api = helpFetch(showError)
 
   const [currentPeriod, setCurrentPeriod] = useState(null)
   const [grades, setGrades] = useState([])
@@ -67,7 +69,7 @@ export default function InscripcionPeriodo({
     autorizedCopyIDCheck: false,
   })
 
-  const api = helpFetch()
+
 
   useEffect(() => {
     loadInitialData()
@@ -102,7 +104,6 @@ export default function InscripcionPeriodo({
       await determineGradeAndRepeaterStatus(gradesData)
     } catch (err) {
       console.error("❌ Error cargando datos iniciales:", err)
-      setError("Error al cargar los datos iniciales")
     } finally {
       setLoading(false)
     }
@@ -198,19 +199,20 @@ export default function InscripcionPeriodo({
       }
     } catch (err) {
       console.error("❌ Error cargando secciones:", err)
-      setError("Error al cargar las secciones")
       setSections([])
     }
   }
 
   const handleInscription = async () => {
     if (!selectedSection) {
-      setError("Debe seleccionar una sección")
+      showError({
+        type: "validation",
+        msg: "Debe seleccionar una sección",
+      })
       return
     }
 
     setLoading(true)
-    setError(null)
 
     try {
       console.log("📝 Realizando inscripción con datos:", {
@@ -230,12 +232,9 @@ export default function InscripcionPeriodo({
         setTimeout(() => {
           onInscriptionCompleted()
         }, 2000)
-      } else {
-        setError(response.msg || "Error al realizar la inscripción")
       }
     } catch (err) {
       console.error("❌ Error en inscripción:", err)
-      setError(err.msg || "Error al realizar la inscripción")
     } finally {
       setLoading(false)
     }
@@ -289,12 +288,7 @@ export default function InscripcionPeriodo({
           <p className="text-center text-body-secondary">Período Académico: {currentPeriod?.name || "Cargando..."}</p>
         </div>
 
-        {error && (
-          <CAlert color="danger" dismissible onClose={() => setError(null)}>
-            <CIcon icon={cilWarning} className="me-2" />
-            {error}
-          </CAlert>
-        )}
+        {/* Error alert removed - using global ErrorModal */}
         {success && (
           <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
             <CIcon icon={cilCheckCircle} className="me-2" />

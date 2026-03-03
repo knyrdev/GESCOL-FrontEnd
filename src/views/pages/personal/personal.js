@@ -46,14 +46,14 @@ import {
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch.js"
 import { detectDarkMode, getRoleColorById, customCSS } from "../../styles/theme-variables.js"
-
-const api = helpFetch()
+import { useError } from "../../../context/ErrorContext"
 
 const PersonalManagement = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   // Estados principales
   const [personal, setPersonal] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
 
@@ -140,7 +140,6 @@ const PersonalManagement = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       console.log("📡 Cargando datos iniciales del personal...")
 
@@ -181,7 +180,6 @@ const PersonalManagement = () => {
       console.log("✅ Datos iniciales cargados exitosamente")
     } catch (error) {
       console.error("❌ Error cargando datos iniciales:", error)
-      setError(`Error al cargar datos: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -231,7 +229,6 @@ const PersonalManagement = () => {
 
     try {
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       const dataToSend = {
@@ -262,7 +259,6 @@ const PersonalManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error creando personal:", error)
-      setError(error.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -273,7 +269,6 @@ const PersonalManagement = () => {
 
     try {
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       const dataToSend = {
@@ -305,7 +300,6 @@ const PersonalManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error actualizando personal:", error)
-      setError(error.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -316,7 +310,6 @@ const PersonalManagement = () => {
 
     try {
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       console.log("🗑️ Eliminando personal:", selectedPersonal.id)
@@ -335,7 +328,6 @@ const PersonalManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error eliminando personal:", error)
-      setError(error.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -353,12 +345,18 @@ const PersonalManagement = () => {
       !personalForm.parishID ||
       !personalForm.idRole
     ) {
-      setError("Por favor, complete todos los campos requeridos")
+      showError({
+        type: "validation",
+        msg: "Por favor, complete todos los campos requeridos",
+      })
       return false
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalForm.email)) {
-      setError("Formato de email inválido")
+      showError({
+        type: "validation",
+        msg: "Formato de email inválido",
+      })
       return false
     }
 
@@ -421,7 +419,6 @@ const PersonalManagement = () => {
 
   const handleDownloadPdf = async (roleId = null, roleName = "Personal") => {
     try {
-      setError(null)
       let endpoint = "/api/pdf/personal/list/all"
 
       if (roleId) {
@@ -442,13 +439,11 @@ const PersonalManagement = () => {
       setSuccess(`PDF de ${roleName} descargado exitosamente`)
     } catch (error) {
       console.error("❌ Error descargando PDF:", error)
-      setError(`Error al generar el PDF de ${roleName}`)
     }
   }
 
   const handleDownloadPersonalPdf = async (personalId, personalName, roleId) => {
     try {
-      setError(null)
       // Si el rol es 1 (Docente), usamos la ruta específica propuesta
       const endpoint =
         String(roleId) === "1" ? `/api/pdf/personal/teacher/${personalId}/details` : `/api/pdf/personal/${personalId}/details`
@@ -466,7 +461,6 @@ const PersonalManagement = () => {
       setSuccess("PDF del personal descargado exitosamente")
     } catch (error) {
       console.error("❌ Error descargando PDF del personal:", error)
-      setError("Error al generar el PDF del personal")
     }
   }
 
@@ -487,18 +481,6 @@ const PersonalManagement = () => {
 
   return (
     <div className="container-fluid py-4">
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)} className="mb-4">
-          <strong>❌ Error:</strong> {error}
-        </CAlert>
-      )}
-
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)} className="mb-4">
-          <strong>✅ Éxito:</strong> {success}
-        </CAlert>
-      )}
-
       <CCard className="shadow-theme card-theme">
         <CCardHeader className="bg-primary text-white">
           <div className="d-flex justify-content-between align-items-center">

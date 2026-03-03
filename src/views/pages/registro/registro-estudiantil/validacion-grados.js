@@ -26,13 +26,13 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilEducation, cilPlus, cilTrash, cilWarning, cilCheckCircle, cilInfo, cilCog } from "@coreui/icons"
 import { helpFetch } from "../../../../api/helpFetch"
-import ErrorModal from "../../../../components/error-modal"
-import { useErrorHandler } from "../../../hooks/use-error-handler"
+import { useError } from "../../../../context/ErrorContext"
 
 export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onHistoryCompleted, onBack }) {
+  const { showError } = useError()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
-  const { error, showErrorModal, handleError, clearError } = useErrorHandler()
+  const api = helpFetch(showError)
 
   const [grades, setGrades] = useState([])
   const [academicPeriods, setAcademicPeriods] = useState([])
@@ -53,7 +53,7 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
     isApproved: true,
   })
 
-  const api = helpFetch()
+
 
   useEffect(() => {
     loadInitialData()
@@ -87,7 +87,6 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
       await determineAutomaticGrade(gradesData.grades)
     } catch (err) {
       console.error("❌ Error cargando datos iniciales:", err)
-      handleError(err, "Carga de datos iniciales")
     } finally {
       setLoading(false)
     }
@@ -156,7 +155,6 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
       }
     } catch (err) {
       console.error("❌ Error determinando grado:", err)
-      handleError(err, "Determinación automática de grado")
 
       // Si hay error, asignar primer grado por defecto
       const firstGrade = gradesData.find((g) => g.name.includes("1er")) || gradesData[0]
@@ -172,13 +170,10 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
   const addHistoryRecord = () => {
     try {
       if (!currentHistory.gradeID || !currentHistory.institutionName || !currentHistory.academicPeriodID) {
-        handleError(
-          {
-            type: "validation",
-            message: "Complete todos los campos del registro académico",
-          },
-          "Validación de campos",
-        )
+        showError({
+          type: "validation",
+          msg: "Complete todos los campos del registro académico",
+        })
         return
       }
 
@@ -189,13 +184,10 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
       )
 
       if (isDuplicate) {
-        handleError(
-          {
-            type: "validation",
-            message: "Ya existe un registro para este grado y período académico",
-          },
-          "Validación de duplicados",
-        )
+        showError({
+          type: "validation",
+          msg: "Ya existe un registro para este grado y período académico",
+        })
         return
       }
 
@@ -320,8 +312,7 @@ export default function ValidacionGradosEnhanced({ student, tipoInscripcion, onH
           </CAlert>
         )}
 
-        {/* Modal de Error */}
-        <ErrorModal visible={showErrorModal} onClose={clearError} error={error} />
+
 
         <CCard className="shadow">
           <CCardHeader className="bg-primary text-white">

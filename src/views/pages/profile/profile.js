@@ -35,12 +35,12 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilUser, cilSettings, cilLockLocked, cilCheck, cilX, cilPencil } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch"
+import { useError } from "../../../context/ErrorContext"
 
 const Profile = () => {
   // Estados principales
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
   // Estados para modales
@@ -69,7 +69,8 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Instancia de API
-  const api = helpFetch()
+  const { showError } = useError()
+  const api = helpFetch(showError)
 
   // Cargar datos del usuario al montar
   useEffect(() => {
@@ -79,7 +80,6 @@ const Profile = () => {
   const loadUserProfile = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       console.log("🔄 Cargando perfil de usuario...")
 
@@ -97,7 +97,6 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("❌ Error cargando perfil:", error)
-      setError(`Error al cargar el perfil: ${error.msg || error.message}`)
     } finally {
       setLoading(false)
     }
@@ -140,7 +139,6 @@ const Profile = () => {
       if (!validateProfileForm()) return
 
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       console.log("💾 Actualizando perfil...")
@@ -158,7 +156,6 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("❌ Error actualizando perfil:", error)
-      setError(`Error al actualizar el perfil: ${error.msg || error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -169,7 +166,6 @@ const Profile = () => {
       if (!validatePasswordForm()) return
 
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       console.log("🔑 Cambiando contraseña...")
@@ -195,7 +191,6 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("❌ Error cambiando contraseña:", error)
-      setError(`Error al cambiar la contraseña: ${error.msg || error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -204,7 +199,6 @@ const Profile = () => {
   const handleUpdateSecurity = async () => {
     try {
       setIsSubmitting(true)
-      setError(null)
       setSuccess(null)
 
       console.log("🛡️ Actualizando configuración de seguridad...")
@@ -230,7 +224,6 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("❌ Error actualizando seguridad:", error)
-      setError(`Error al actualizar la seguridad: ${error.msg || error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -268,29 +261,21 @@ const Profile = () => {
 
   if (!userData) {
     return (
-      <CAlert color="danger">
-        <h4>Error</h4>
+      <div className="text-center py-5">
+        <h4>Información del Perfil</h4>
         <p>No se pudo cargar la información del perfil.</p>
         <CButton color="primary" onClick={loadUserProfile}>
           Reintentar
         </CButton>
-      </CAlert>
+      </div>
     )
   }
 
   return (
     <CContainer fluid>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          <strong>Error:</strong> {error}
-        </CAlert>
-      )}
+      {/* Error alert removed - using global ErrorModal */}
 
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          <strong>Éxito:</strong> {success}
-        </CAlert>
-      )}
+      {/* Success alerts removed as per instruction */}
 
       <CRow>
         <CCol lg={4}>

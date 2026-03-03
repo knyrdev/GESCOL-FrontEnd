@@ -54,12 +54,12 @@ import {
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch"
 import { detectDarkMode, customCSS } from "../../styles/theme-variables.js"
+import { useError } from "../../../context/ErrorContext"
 
 const SectionManagement = () => {
   // Estados principales
   const [sections, setSections] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
 
@@ -103,7 +103,8 @@ const SectionManagement = () => {
   const [toasts, setToasts] = useState([])
 
   // Instancia de API
-  const api = helpFetch()
+  const { showError } = useError()
+  const api = helpFetch(showError)
 
   // Inyectar CSS personalizado
   useEffect(() => {
@@ -192,7 +193,6 @@ const SectionManagement = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       console.log("🔄 Cargando datos iniciales...")
 
@@ -224,7 +224,6 @@ const SectionManagement = () => {
       await loadAvailableTeachers()
     } catch (error) {
       console.error("❌ Error cargando datos iniciales:", error)
-      setError(`Error al cargar datos iniciales: ${error.message || error.msg}`)
     } finally {
       setLoading(false)
     }
@@ -267,8 +266,6 @@ const SectionManagement = () => {
 
   const loadSections = async () => {
     try {
-      setError(null)
-
       console.log("🔄 Cargando secciones para período:", selectedPeriod)
 
       const params = selectedPeriod ? `?academicPeriodId=${selectedPeriod}` : ""
@@ -282,7 +279,6 @@ const SectionManagement = () => {
       }
     } catch (error) {
       console.error("❌ Error cargando secciones:", error)
-      setError(`Error al cargar secciones: ${error.msg || error.message}`)
     }
   }
 
@@ -335,9 +331,6 @@ const SectionManagement = () => {
       if (!validateSectionForm()) return
 
       setIsSubmitting(true)
-      setError(null)
-      setFormErrors({}) // Limpiar errores de formulario
-
       console.log("➕ Creando sección...")
 
       const response = await api.post("/api/matriculas/sections", {
@@ -355,26 +348,16 @@ const SectionManagement = () => {
         resetSectionForm()
         await loadSections()
         console.log("✅ Sección creada")
-      } else {
-        // Manejar errores específicos del backend
+      } else if (response?.status === 400) {
         const errorMessage = response?.msg || "Error al crear sección"
-
-        // Si es error de validación, mostrar en el formulario
-        if (response?.status === 400) {
-          if (errorMessage.includes("Ya existe una sección")) {
-            setFormErrors({ seccion: errorMessage })
-          } else if (errorMessage.includes("docente ya está asignado")) {
-            setFormErrors({ teacherCI: errorMessage })
-          } else {
-            setError(errorMessage)
-          }
-        } else {
-          setError(errorMessage)
+        if (errorMessage.includes("Ya existe una sección")) {
+          setFormErrors({ seccion: errorMessage })
+        } else if (errorMessage.includes("docente ya está asignado")) {
+          setFormErrors({ teacherCI: errorMessage })
         }
       }
     } catch (error) {
       console.error("❌ Error creando sección:", error)
-      setError(`Error de conexión: ${error.message || error.msg || "No se pudo conectar con el servidor"}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -385,9 +368,6 @@ const SectionManagement = () => {
       if (!validateSectionForm()) return
 
       setIsSubmitting(true)
-      setError(null)
-      setFormErrors({}) // Limpiar errores de formulario
-
       console.log("✏️ Actualizando sección...")
 
       const response = await api.put(
@@ -409,26 +389,16 @@ const SectionManagement = () => {
         resetSectionForm()
         await loadSections()
         console.log("✅ Sección actualizada")
-      } else {
-        // Manejar errores específicos del backend
+      } else if (response?.status === 400) {
         const errorMessage = response?.msg || "Error al actualizar sección"
-
-        // Si es error de validación, mostrar en el formulario
-        if (response?.status === 400) {
-          if (errorMessage.includes("Ya existe otra sección")) {
-            setFormErrors({ seccion: errorMessage })
-          } else if (errorMessage.includes("docente ya está asignado")) {
-            setFormErrors({ teacherCI: errorMessage })
-          } else {
-            setError(errorMessage)
-          }
-        } else {
-          setError(errorMessage)
+        if (errorMessage.includes("Ya existe otra sección")) {
+          setFormErrors({ seccion: errorMessage })
+        } else if (errorMessage.includes("docente ya está asignado")) {
+          setFormErrors({ teacherCI: errorMessage })
         }
       }
     } catch (error) {
       console.error("❌ Error actualizando sección:", error)
-      setError(`Error de conexión: ${error.message || error.msg || "No se pudo conectar con el servidor"}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -439,7 +409,6 @@ const SectionManagement = () => {
       if (!selectedSection) return
 
       setIsSubmitting(true)
-      setError(null)
 
       console.log("🗑️ Eliminando sección...")
 
@@ -454,16 +423,11 @@ const SectionManagement = () => {
       } else {
         // Manejar errores específicos del backend
         const errorMessage = response?.msg || "Error al eliminar sección"
-
-        if (response?.status === 400 && errorMessage.includes("estudiantes inscritos")) {
-          setError("No se puede eliminar la sección porque tiene estudiantes matriculados")
-        } else {
-          setError(errorMessage)
-        }
+        addToast(errorMessage, "error")
       }
     } catch (error) {
       console.error("❌ Error eliminando sección:", error)
-      setError(`Error de conexión: ${error.message || error.msg || "No se pudo conectar con el servidor"}`)
+      addToast("Error inesperado al eliminar sección", "error")
     } finally {
       setIsSubmitting(false)
     }
@@ -554,18 +518,7 @@ const SectionManagement = () => {
         ))}
       </CToaster>
 
-      {/* Alertas */}
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)} className="mb-4">
-          <strong>❌ Error:</strong> {error}
-        </CAlert>
-      )}
-
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)} className="mb-4">
-          <strong>✅ Éxito:</strong> {success}
-        </CAlert>
-      )}
+      {/* Alertas removed as per instruction - using global ErrorModal */}
 
       {/* Selector de Período Académico */}
       <CCard className="mb-4 border-primary card-theme">
@@ -918,12 +871,7 @@ const SectionManagement = () => {
                   La sección se creará para el período académico seleccionado.
                 </div>
 
-                {error && (
-                  <CAlert color="danger" dismissible onClose={() => setError(null)} className="mb-3">
-                    <CIcon icon={cilWarning} className="me-2" />
-                    <strong>Error:</strong> {error}
-                  </CAlert>
-                )}
+
 
                 <CRow>
                   <CCol md={6}>

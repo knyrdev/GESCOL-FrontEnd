@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { helpFetch } from "../../api/helpFetch"
+import { useError } from "../../context/ErrorContext"
 
 import {
   CButton,
@@ -59,7 +60,6 @@ const Dashboard = () => {
   // Estados para los datos del dashboard
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [chartData, setChartData] = useState(null)
 
@@ -87,7 +87,8 @@ const Dashboard = () => {
   const [loadingStudents, setLoadingStudents] = useState(false)
 
   // Instancia de helpFetch
-  const api = helpFetch()
+  const { showError } = useError()
+  const api = helpFetch(showError)
 
   // Cargar datos del dashboard al montar el componente
   useEffect(() => {
@@ -99,7 +100,6 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       console.log("🔄 Cargando datos del dashboard escolar...")
 
@@ -111,12 +111,9 @@ const Dashboard = () => {
         setDashboardData(response.data)
         processChartData(response.data)
         console.log("✅ Datos del dashboard cargados exitosamente")
-      } else {
-        throw new Error(response.msg || "Error al cargar datos del dashboard")
       }
     } catch (error) {
       console.error("❌ Error loading dashboard data:", error)
-      setError(`Error al cargar los datos del dashboard: ${error.msg || error.message || "Error desconocido"}`)
       loadExampleData()
     } finally {
       setLoading(false)
@@ -166,25 +163,23 @@ const Dashboard = () => {
   const handleFinalizePeriod = async () => {
     try {
       if (!currentPeriod) {
-        setError("No hay período académico actual para finalizar")
         return
       }
 
       if (
         !window.confirm(
           `¿Está seguro de que desea finalizar el período académico "${currentPeriod.name}"?\n\n` +
-            "Esta acción:\n" +
-            "• Creará un nuevo período académico\n" +
-            "• Cambiará el estado de estudiantes inscritos a activos\n" +
-            "• Marcará el período actual como finalizado\n\n" +
-            "Esta acción NO se puede deshacer.",
+          "Esta acción:\n" +
+          "• Creará un nuevo período académico\n" +
+          "• Cambiará el estado de estudiantes inscritos a activos\n" +
+          "• Marcará el período actual como finalizado\n\n" +
+          "Esta acción NO se puede deshacer.",
         )
       ) {
         return
       }
 
       setFinalizingPeriod(true)
-      setError(null)
       setSuccess(null)
 
       console.log("🔄 Finalizando período académico...")
@@ -193,11 +188,11 @@ const Dashboard = () => {
         body: {},
       })
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess(
           `Período académico finalizado exitosamente. ` +
-            `Nuevo período "${response.newPeriod?.name}" creado. ` +
-            `${response.studentsUpdated || 0} estudiantes actualizados a estado activo.`,
+          `Nuevo período "${response.newPeriod?.name}" creado. ` +
+          `${response.studentsUpdated || 0} estudiantes actualizados a estado activo.`,
         )
         setShowFinalizePeriodModal(false)
 
@@ -206,12 +201,9 @@ const Dashboard = () => {
         await loadAcademicPeriods()
 
         console.log("✅ Período finalizado exitosamente")
-      } else {
-        throw new Error(response.msg || "Error al finalizar período")
       }
     } catch (error) {
       console.error("❌ Error finalizando período:", error)
-      setError(`Error al finalizar período: ${error.msg || error.message}`)
     } finally {
       setFinalizingPeriod(false)
     }
@@ -478,7 +470,6 @@ const Dashboard = () => {
   const handleAttendanceSubmit = async () => {
     try {
       if (!attendanceForm.sectionId) {
-        setError("Debe seleccionar una sección")
         return
       }
 
@@ -488,17 +479,14 @@ const Dashboard = () => {
         body: attendanceForm,
       })
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess("Asistencia guardada exitosamente")
         console.log("✅ Asistencia guardada exitosamente")
         closeAttendanceModal()
         loadDashboardData() // Recargar datos
-      } else {
-        throw new Error(response.msg || "Error al guardar la asistencia")
       }
     } catch (error) {
       console.error("❌ Error saving attendance:", error)
-      setError(`Error al guardar la asistencia: ${error.msg || error.message}`)
     }
   }
 
@@ -557,17 +545,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {error && (
-        <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          <strong>❌ Error:</strong> {error}
-        </CAlert>
-      )}
-
-      {success && (
-        <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          <strong>✅ Éxito:</strong> {success}
-        </CAlert>
-      )}
+      {/* Alertas removed - using global ErrorModal */}
 
       {/* Información del período académico actual */}
       {currentPeriod && (
@@ -1185,10 +1163,10 @@ const Dashboard = () => {
                             <strong>
                               {attendanceForm.students.length > 0
                                 ? Math.round(
-                                    (attendanceForm.students.filter((s) => s.present).length /
-                                      attendanceForm.students.length) *
-                                      100,
-                                  )
+                                  (attendanceForm.students.filter((s) => s.present).length /
+                                    attendanceForm.students.length) *
+                                  100,
+                                )
                                 : 0}
                               %
                             </strong>

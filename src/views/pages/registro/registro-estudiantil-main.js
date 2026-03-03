@@ -14,7 +14,6 @@ export default function RegistroEstudiantilMain() {
   const [student, setStudent] = useState(null)
   const [hasAcademicHistory, setHasAcademicHistory] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
 
   const handleTipoSelected = (tipo) => {
     setTipoInscripcion(tipo)
@@ -101,15 +100,7 @@ export default function RegistroEstudiantilMain() {
         </div>
       )}
 
-      {error && (
-        <CContainer className="py-4">
-          <CAlert color="danger" dismissible onClose={() => setError(null)}>
-            {error}
-          </CAlert>
-        </CContainer>
-      )}
-
-      {!loading && !error && (
+      {!loading && (
         <>
           {currentStep === "tipo" && <TipoInscripcion onSelectTipo={handleTipoSelected} />}
 

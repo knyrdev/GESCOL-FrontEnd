@@ -24,10 +24,11 @@ import {
 import CIcon from "@coreui/icons-react"
 import { cilUser, cilPeople, cilCheckCircle, cilWarning, cilArrowRight, cilArrowLeft, cilSave } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch.js"
-
-const api = helpFetch()
+import { useError } from "../../../context/ErrorContext"
 
 const RegistroEstudiantil = () => {
+  const { showError } = useError()
+  const api = helpFetch(showError)
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -75,12 +76,18 @@ const RegistroEstudiantil = () => {
 
   const [errors, setErrors] = useState({})
 
+
+
   const showToast = (message, color = "success") => {
+    if (color === "danger") {
+      showError({ message })
+      return
+    }
     const toast = (
       <CToast autohide delay={5000}>
         <CToastHeader closeButton>
           <CIcon icon={color === "success" ? cilCheckCircle : cilWarning} className="me-2" />
-          <strong className="me-auto">{color === "success" ? "Éxito" : "Error"}</strong>
+          <strong className="me-auto">{color === "success" ? "Éxito" : "Alerta"}</strong>
         </CToastHeader>
         <CToastBody>{message}</CToastBody>
       </CToast>
@@ -141,6 +148,11 @@ const RegistroEstudiantil = () => {
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, 2))
+    } else {
+      showError({
+        type: "validation",
+        message: "Por favor complete los campos obligatorios marcados con error."
+      })
     }
   }
 
