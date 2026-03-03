@@ -40,6 +40,7 @@
       "build/**/*",
       "main.js",
       "package.json",
+      "public/icon.png",
       "!**/node_modules/**/*",
       "!**/*.map"
     ],
@@ -47,6 +48,7 @@
       "main": "main.js"
     },
     "win": {
+      "icon": "public/favicon.ico",
       "target": [
         {
           "target": "nsis",
@@ -87,6 +89,8 @@
       "artifactName": "${productName}-${version}-portable.${ext}"
     },
     "linux": {
+      "icon": "public/icon.png",
+      "executableName": "gescol",
       "target": [
         {
           "target": "AppImage",
@@ -113,14 +117,6 @@
       "artifactName": "${productName}-${version}.${ext}"
     },
     "deb": {
-      "depends": [
-        "gconf2",
-        "gconf-service",
-        "libnotify4",
-        "libappindicator1",
-        "libxtst6",
-        "libnss3"
-      ],
       "priority": "optional"
     },
     "mac": {

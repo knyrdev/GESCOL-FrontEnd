@@ -18,6 +18,7 @@ import { helpFetch } from '../../../api/helpFetch'
 import { useError } from '../../../context/ErrorContext'
 
 import loginBackground from '/src/assets/brand/fondologin.jpg'
+import logoGescol from '/src/assets/brand/logo1.png'
 
 const Login = () => {
   const { showError } = useError()
@@ -177,7 +178,7 @@ const Login = () => {
         }}
       >
         <img
-          src="/src/assets/brand/logo1.png"
+          src={logoGescol}
           alt="Logo Gescol"
           style={{ maxWidth: '300px', marginBottom: '40px' }}
         />
