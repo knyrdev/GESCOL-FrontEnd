@@ -50,6 +50,7 @@ const MatriculaList = () => {
   const [selectedMatricula, setSelectedMatricula] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [grades, setGrades] = useState([])
+  const [selectedGradeId, setSelectedGradeId] = useState('')
 
   // Estados para datos de utilidad
   const [periodos, setPeriodos] = useState([])
@@ -232,16 +233,22 @@ const MatriculaList = () => {
     )
   }
 
-  const handleDownloadPdfByGrade = async (gradeID, gradeName) => {
+  const handleDownloadPdfByGrade = async () => {
     try {
-      if (!gradeID) throw new Error('ID del grado no proporcionado')
+      if (!selectedGradeId) {
+        setError('Por favor, seleccione un grado')
+        return
+      }
 
-      const blob = await api.downloadFile(`/api/pdf/student/list/grade/${gradeID}`)
+      const grade = grades.find(g => String(g.id) === String(selectedGradeId))
+      const gradeName = grade ? grade.name : selectedGradeId
+
+      const blob = await api.downloadFile(`/api/pdf/students/list/grade/${selectedGradeId}`)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
 
-      link.setAttribute('download', `Grado_${gradeName || gradeID}.pdf`)
+      link.setAttribute('download', `Grado_${gradeName}.pdf`)
 
       document.body.appendChild(link)
       link.click()
@@ -249,6 +256,7 @@ const MatriculaList = () => {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error descargando PDF por grado:', error)
+      setError('Error al descargar el PDF del grado')
     }
   }
 
@@ -268,27 +276,32 @@ const MatriculaList = () => {
       <CCard>
         <CCardHeader className="d-flex justify-content-between align-items-center bg-info text-white">
           <h5 className="mb-0">Gestión de Matrículas</h5>
-          <div className="d-flex gap-2">
-            <CButton color="info" onClick={loadMatriculas}>
+          <div className="d-flex gap-2 align-items-center">
+            <CFormSelect
+              size="sm"
+              value={selectedGradeId}
+              onChange={(e) => setSelectedGradeId(e.target.value)}
+              style={{ width: '200px' }}
+            >
+              <option value="">Seleccione un grado...</option>
+              {grades.map((grade) => (
+                <option key={grade.id} value={grade.id}>
+                  {grade.name}
+                </option>
+              ))}
+            </CFormSelect>
+            <CButton
+              color="success"
+              size="sm"
+              onClick={handleDownloadPdfByGrade}
+              disabled={!selectedGradeId}
+            >
+              Descargar PDF por Grado
+            </CButton>
+            <CButton color="info" size="sm" onClick={loadMatriculas}>
               <CIcon icon={cilReload} className="me-1" />
               Actualizar
             </CButton>
-            {grades.length > 0 ? (
-              grades.map((grade) => (
-                <CButton
-                  key={grade.gradeID}
-                  color="success"
-                  onClick={() => {
-                    console.log('Descargando PDF del grado:', grade)
-                    handleDownloadPdfByGrade(grade.gradeID, grade.name)
-                  }}
-                >
-                  Descargar PDF por Grado
-                </CButton>
-              ))
-            ) : (
-              <p>No hay grados para descargar.</p>
-            )}
           </div>
         </CCardHeader>
 

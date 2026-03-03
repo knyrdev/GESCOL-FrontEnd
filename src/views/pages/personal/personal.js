@@ -422,7 +422,12 @@ const PersonalManagement = () => {
   const handleDownloadPdf = async (roleId = null, roleName = "Personal") => {
     try {
       setError(null)
-      const endpoint = roleId ? `/api/pdf/personal/list/role/${roleId}` : "/api/pdf/personal/list/all"
+      let endpoint = "/api/pdf/personal/list/all"
+
+      if (roleId) {
+        // Si el rol es 1 (Docente), usamos la ruta específica propuesta
+        endpoint = String(roleId) === "1" ? "/api/pdf/personal/teachers/list" : `/api/pdf/personal/list/role/${roleId}`
+      }
 
       const blob = await api.downloadFile(endpoint)
       const url = URL.createObjectURL(blob)
@@ -441,10 +446,14 @@ const PersonalManagement = () => {
     }
   }
 
-  const handleDownloadPersonalPdf = async (personalId, personalName) => {
+  const handleDownloadPersonalPdf = async (personalId, personalName, roleId) => {
     try {
       setError(null)
-      const blob = await api.downloadFile(`/api/pdf/personal/${personalId}/details`)
+      // Si el rol es 1 (Docente), usamos la ruta específica propuesta
+      const endpoint =
+        String(roleId) === "1" ? `/api/pdf/personal/teacher/${personalId}/details` : `/api/pdf/personal/${personalId}/details`
+
+      const blob = await api.downloadFile(endpoint)
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
@@ -1083,7 +1092,7 @@ const PersonalManagement = () => {
           <CButton
             color="success"
             onClick={() =>
-              handleDownloadPersonalPdf(selectedPersonal.id, `${selectedPersonal.name}_${selectedPersonal.lastName}`)
+              handleDownloadPersonalPdf(selectedPersonal.id, `${selectedPersonal.name}_${selectedPersonal.lastName}`, selectedPersonal.idRole)
             }
           >
             <CIcon icon={cilPrint} className="me-2" />

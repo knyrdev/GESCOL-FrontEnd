@@ -20,7 +20,6 @@ import {
   CModalFooter,
   CForm,
   CFormInput,
-  CFormSelect,
   CSpinner,
   CAlert,
   CInputGroup,
@@ -59,20 +58,17 @@ const UserManagement = () => {
 
   // Estados para modales
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
 
   // Estados para formularios
   const [userForm, setUserForm] = useState({
     username: '',
-    email: '',
     password: '',
     confirmPassword: '',
-    permiso_id: '',
-    security_word: '',
-    respuesta_de_seguridad: '',
-    personal_id: '' || 'null',
+    securityWord: '',
+    securityAnswer: '',
+    personalId: '',
   })
   const [formErrors, setFormErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -90,62 +86,39 @@ const UserManagement = () => {
       const filtered = users.filter(
         (user) =>
           user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       setFilteredUsers(filtered)
     }
-    setCurrentPage(1) // Reset a la primera página
+    setCurrentPage(1)
   }, [searchTerm, users])
 
   const loadUsers = async () => {
     try {
       setLoading(true)
       setError(null)
-      console.log('🔄 Cargando lista de usuarios...')
-
-      const response = await api.get('/api/users/list')
-
-      // SIGUIENDO EL PATRÓN DEL COMPONENTE DOCENTE
+      const response = await api.get('/api/user/list')
       if (!response.error) {
         setUsers(response.users)
-        console.log('✅ Usuarios cargados:', response.users.length)
       } else {
-        console.error('Error al obtener usuarios:', response)
         setError(response.msg || 'Error al cargar usuarios')
       }
     } catch (error) {
-      console.error('❌ Error cargando usuarios:', error)
-      setError(`Error al cargar usuarios: ${error.msg || error.message}`)
+      setError(`Error al cargar usuarios: ${error.message}`)
     } finally {
       setLoading(false)
     }
   }
 
   const validateUserForm = () => {
-    if (
-      !userForm.username ||
-      !userForm.password ||
-      userForm.password !== userForm.confirmPassword
-    ) {
-      console.error('Por favor, complete todos los campos requeridos.')
-      setError('Por favor, complete todos los campos requeridos correctamente.')
-      return false
-    }
+    const errors = {}
+    if (!userForm.username) errors.username = 'El usuario es requerido'
+    if (!userForm.password) errors.password = 'La contraseña es requerida'
+    else if (userForm.password.length < 8) errors.password = 'Mínimo 8 caracteres'
+    if (userForm.password !== userForm.confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden'
 
-    if (userForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email)) {
-      console.error('Formato de email inválido')
-      setError('Formato de email inválido')
-      return false
-    }
-
-    if (userForm.password.length < 6) {
-      console.error('La contraseña debe tener al menos 6 caracteres')
-      setError('La contraseña debe tener al menos 6 caracteres')
-      return false
-    }
-
-    return true
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleCreateUser = async () => {
@@ -156,37 +129,27 @@ const UserManagement = () => {
       setError(null)
       setSuccess(null)
 
-      console.log('👤 Creando nuevo usuario...')
-
-      const response = await api.post('/api/users/register', {
+      const response = await api.post('/api/user/register', {
         body: {
           username: userForm.username.trim(),
-          email: userForm.email.trim(),
           password: userForm.password,
-          permiso_id: Number.parseInt(userForm.permiso_id),
-          security_word: userForm.security_word.trim(),
-          respuesta_de_seguridad: userForm.respuesta_de_seguridad.trim(),
-          personal_id: userForm.personal_id ? Number.parseInt(userForm.personal_id) : null,
+          securityWord: userForm.securityWord.trim(),
+          securityAnswer: userForm.securityAnswer.trim(),
+          personalId: userForm.personalId ? Number.parseInt(userForm.personalId) : null,
         },
       })
 
-      console.log('Response:', response)
-
-      // SIGUIENDO EL PATRÓN DEL COMPONENTE DOCENTE
       if (response.error) {
-        console.error('Error al crear usuario:', response.msg || response)
-        setError(response.msg || 'Ocurrió un error al crear el usuario')
+        setError(response.msg || 'Error al crear el usuario')
         return
       }
 
-      console.log('Usuario creado exitosamente:', response)
       setSuccess('Usuario creado exitosamente')
       setShowCreateModal(false)
       loadUsers()
       resetForm()
     } catch (error) {
-      console.error('❌ Error creando usuario:', error)
-      setError(`Error al crear usuario: ${error.msg || error.message}`)
+      setError(`Error al crear usuario: ${error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -196,58 +159,37 @@ const UserManagement = () => {
     try {
       setError(null)
       setSuccess(null)
+      const response = await api.put(`/api/user/status/${userId}`, {
+        body: { isActive: !currentStatus }
+      })
 
-      const endpoint = currentStatus
-        ? `/api/users/deactivate/${userId}`
-        : `/api/users/activate/${userId}`
-      const action = currentStatus ? 'desactivar' : 'activar'
-
-      console.log(`🔄 ${action} usuario...`)
-
-      const response = await api.put(endpoint)
-
-      // SIGUIENDO EL PATRÓN DEL COMPONENTE DOCENTE
       if (!response.error) {
-        setSuccess(`Usuario ${action}do exitosamente`)
+        setSuccess(`Usuario ${currentStatus ? 'desactivado' : 'activado'} exitosamente`)
         loadUsers()
-        console.log(`✅ Usuario ${action}do`)
       } else {
-        console.error(`Error al ${action} usuario:`, response)
-        setError(response.msg || `Error al ${action} usuario`)
+        setError(response.msg || 'Error al cambiar estado')
       }
     } catch (error) {
-      console.error(`❌ Error al cambiar estado del usuario:`, error)
-      setError(`Error al cambiar estado del usuario: ${error.msg || error.message}`)
+      setError(`Error al cambiar estado: ${error.message}`)
     }
   }
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return
-
     try {
       setIsSubmitting(true)
       setError(null)
-      setSuccess(null)
-
-      console.log('🗑️ Eliminando usuario:', selectedUser.id)
-
-      // SIGUIENDO EL PATRÓN DEL COMPONENTE DOCENTE - USANDO DELET
-      const response = await api.delet('/api/users', selectedUser.id)
-
-      // SIGUIENDO EL PATRÓN DEL COMPONENTE DOCENTE
+      const response = await api.delet('/api/user', selectedUser.id)
       if (!response.error) {
         setSuccess('Usuario eliminado exitosamente')
         setShowDeleteModal(false)
         setSelectedUser(null)
         loadUsers()
-        console.log('✅ Usuario eliminado')
       } else {
-        console.error('Error eliminando usuario:', response)
         setError(response.msg || 'Error al eliminar usuario')
       }
     } catch (error) {
-      console.error('❌ Error eliminando usuario:', error)
-      setError(`Error al eliminar usuario: ${error.msg || error.message}`)
+      setError(`Error al eliminar usuario: ${error.message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -256,37 +198,20 @@ const UserManagement = () => {
   const resetForm = () => {
     setUserForm({
       username: '',
-      email: '',
       password: '',
       confirmPassword: '',
-      permiso_id: '',
-      security_word: '',
-      respuesta_de_seguridad: '',
-      personal_id: '',
+      securityWord: '',
+      securityAnswer: '',
+      personalId: '',
     })
     setFormErrors({})
   }
 
-  const openCreateModal = () => {
-    resetForm()
-    setSelectedUser(null)
-    setShowCreateModal(true)
-  }
-
-  const openDeleteModal = (user) => {
-    setSelectedUser(user)
-    setShowDeleteModal(true)
-  }
-
   const handleFormChange = (e) => {
     const { name, value } = e.target
-    setUserForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setUserForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  // Calcular usuarios para la página actual
   const indexOfLastUser = currentPage * usersPerPage
   const indexOfFirstUser = indexOfLastUser - usersPerPage
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser)
@@ -305,13 +230,12 @@ const UserManagement = () => {
     <>
       {error && (
         <CAlert color="danger" dismissible onClose={() => setError(null)}>
-          <strong>Error:</strong> {error}
+          {error}
         </CAlert>
       )}
-
       {success && (
         <CAlert color="success" dismissible onClose={() => setSuccess(null)}>
-          <strong>Éxito:</strong> {success}
+          {success}
         </CAlert>
       )}
 
@@ -322,11 +246,11 @@ const UserManagement = () => {
             Gestión de Usuarios
           </h5>
           <div className="d-flex gap-2">
-            <CButton color="warning" onClick={loadUsers}>
+            <CButton color="warning" onClick={loadUsers} className="text-white">
               <CIcon icon={cilReload} className="me-1" />
               Actualizar
             </CButton>
-            <CButton color="primary" onClick={openCreateModal}>
+            <CButton color="primary" onClick={() => { resetForm(); setShowCreateModal(true); }}>
               <CIcon icon={cilUserPlus} className="me-1" />
               Nuevo Usuario
             </CButton>
@@ -334,292 +258,163 @@ const UserManagement = () => {
         </CCardHeader>
 
         <CCardBody>
-          {/* Barra de búsqueda */}
           <CRow className="mb-3">
             <CCol md={6}>
               <CInputGroup>
-                <CInputGroupText>
-                  <CIcon icon={cilSearch} />
-                </CInputGroupText>
+                <CInputGroupText><CIcon icon={cilSearch} /></CInputGroupText>
                 <CFormInput
-                  placeholder="Buscar por nombre, email o usuario..."
+                  placeholder="Buscar por usuario o nombre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </CInputGroup>
             </CCol>
-            <CCol md={6} className="text-end">
-              <small className="text-muted">
-                Mostrando {currentUsers.length} de {filteredUsers.length} usuarios
-              </small>
-            </CCol>
           </CRow>
 
-          {/* Tabla de usuarios */}
           <CTable hover responsive>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell>Usuario</CTableHeaderCell>
-                <CTableHeaderCell>Email</CTableHeaderCell>
                 <CTableHeaderCell>Nombre Completo</CTableHeaderCell>
                 <CTableHeaderCell>Rol</CTableHeaderCell>
                 <CTableHeaderCell>Estado</CTableHeaderCell>
-                <CTableHeaderCell>Último Acceso</CTableHeaderCell>
                 <CTableHeaderCell>Acciones</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {Array.isArray(currentUsers) && currentUsers.length > 0 ? (
-                currentUsers.map((user) => (
-                  <CTableRow key={user.id}>
-                    <CTableDataCell>
-                      <strong>{user.username}</strong>
-                    </CTableDataCell>
-                    <CTableDataCell>{user.email || 'Sin email'}</CTableDataCell>
-                    <CTableDataCell>{user.nombre_completo || 'Usuario Externo'}</CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge color="info">{user.rol_nombre || 'Sin rol'}</CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge color={user.is_active ? 'success' : 'danger'}>
-                        {user.is_active ? 'Activo' : 'Inactivo'}
-                      </CBadge>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <small className="text-muted">
-                        {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Nunca'}
-                      </small>
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CButtonGroup size="sm">
-                        <CButton
-                          color={user.is_active ? 'warning' : 'success'}
-                          variant="outline"
-                          onClick={() => handleToggleUserStatus(user.id, user.is_active)}
-                          title={user.is_active ? 'Desactivar' : 'Activar'}
-                        >
-                          <CIcon icon={user.is_active ? cilLockLocked : cilLockUnlocked} />
-                        </CButton>
-                        <CButton
-                          color="danger"
-                          variant="outline"
-                          onClick={() => openDeleteModal(user)}
-                          title="Eliminar"
-                        >
-                          <CIcon icon={cilTrash} />
-                        </CButton>
-                      </CButtonGroup>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
-              ) : (
-                <CTableRow>
-                  <CTableDataCell colSpan={7} className="text-center text-muted">
-                    {searchTerm
-                      ? 'No se encontraron usuarios que coincidan con la búsqueda'
-                      : 'No hay usuarios'}
+              {currentUsers.map((user) => (
+                <CTableRow key={user.id}>
+                  <CTableDataCell><strong>{user.username}</strong></CTableDataCell>
+                  <CTableDataCell>{user.nombre_completo || 'Usuario Externo'}</CTableDataCell>
+                  <CTableDataCell><CBadge color="info">{user.rol_nombre || 'Usuario'}</CBadge></CTableDataCell>
+                  <CTableDataCell>
+                    <CBadge color={user.isActive ? 'success' : 'danger'}>
+                      {user.isActive ? 'Activo' : 'Inactivo'}
+                    </CBadge>
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    <CButtonGroup size="sm">
+                      <CButton
+                        color={user.isActive ? 'warning' : 'success'}
+                        variant="outline"
+                        onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                      >
+                        <CIcon icon={user.isActive ? cilLockLocked : cilLockUnlocked} />
+                      </CButton>
+                      <CButton
+                        color="danger"
+                        variant="outline"
+                        onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
+                      >
+                        <CIcon icon={cilTrash} />
+                      </CButton>
+                    </CButtonGroup>
                   </CTableDataCell>
                 </CTableRow>
-              )}
+              ))}
             </CTableBody>
           </CTable>
 
-          {/* Paginación */}
           {totalPages > 1 && (
-            <div className="d-flex justify-content-center mt-3">
-              <CPagination>
+            <CPagination className="justify-content-center">
+              {[...Array(totalPages)].map((_, i) => (
                 <CPaginationItem
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  style={{ cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                  key={i + 1}
+                  active={currentPage === i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
                 >
-                  Anterior
+                  {i + 1}
                 </CPaginationItem>
-                {[...Array(totalPages)].map((_, index) => (
-                  <CPaginationItem
-                    key={index + 1}
-                    active={currentPage === index + 1}
-                    onClick={() => setCurrentPage(index + 1)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {index + 1}
-                  </CPaginationItem>
-                ))}
-                <CPaginationItem
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  style={{ cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
-                >
-                  Siguiente
-                </CPaginationItem>
-              </CPagination>
-            </div>
+              ))}
+            </CPagination>
           )}
         </CCardBody>
       </CCard>
 
-      {/* Modal para crear usuario */}
+      {/* Modal Crear */}
       <CModal visible={showCreateModal} onClose={() => setShowCreateModal(false)} size="lg">
         <CModalHeader className="bg-info text-white">
-          <CModalTitle>Crear Nuevo Usuario</CModalTitle>
+          <CModalTitle>Crear Usuario</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>
             <CRow>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Nombre de Usuario *"
-                    name="username"
-                    value={userForm.username}
-                    onChange={handleFormChange}
-                    placeholder="Ingrese el nombre de usuario"
-                    required
-                  />
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="Usuario *"
+                  name="username"
+                  value={userForm.username}
+                  onChange={handleFormChange}
+                  invalid={!!formErrors.username}
+                />
               </CCol>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={userForm.email}
-                    onChange={handleFormChange}
-                    placeholder="Ingrese el email"
-                  />
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="ID Personal (Opcional)"
+                  name="personalId"
+                  value={userForm.personalId}
+                  onChange={handleFormChange}
+                />
               </CCol>
             </CRow>
             <CRow>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Contraseña *"
-                    name="password"
-                    type="password"
-                    value={userForm.password}
-                    onChange={handleFormChange}
-                    placeholder="Ingrese la contraseña"
-                    required
-                  />
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="Contraseña *"
+                  name="password"
+                  type="password"
+                  value={userForm.password}
+                  onChange={handleFormChange}
+                  invalid={!!formErrors.password}
+                />
               </CCol>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Confirmar Contraseña *"
-                    name="confirmPassword"
-                    type="password"
-                    value={userForm.confirmPassword}
-                    onChange={handleFormChange}
-                    placeholder="Confirme la contraseña"
-                    required
-                  />
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="Confirmar Contraseña *"
+                  name="confirmPassword"
+                  type="password"
+                  value={userForm.confirmPassword}
+                  onChange={handleFormChange}
+                  invalid={!!formErrors.confirmPassword}
+                />
               </CCol>
             </CRow>
             <CRow>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormSelect
-                    label="Nivel de Permisos *"
-                    name="permiso_id"
-                    value={userForm.permiso_id}
-                    onChange={handleFormChange}
-                    required
-                  >
-                    <option value="">Seleccionar permiso...</option>
-                    <option value="1">Acceso Total</option>
-                    <option value="2">Gestión Académica</option>
-                    <option value="3">Gestión Personal</option>
-                    <option value="4">Consulta Básica</option>
-                  </CFormSelect>
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="Pregunta de Seguridad"
+                  name="securityWord"
+                  value={userForm.securityWord}
+                  onChange={handleFormChange}
+                  placeholder="Ej: ¿Color favorito?"
+                />
               </CCol>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="ID Personal (Opcional)"
-                    name="personal_id"
-                    type="number"
-                    value={userForm.personal_id}
-                    onChange={handleFormChange}
-                    placeholder="ID del personal asociado"
-                  />
-                </div>
-              </CCol>
-            </CRow>
-            <CRow>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Palabra de Seguridad"
-                    name="security_word"
-                    value={userForm.security_word}
-                    onChange={handleFormChange}
-                    placeholder="Ej: ¿Cuál es tu color favorito?"
-                  />
-                </div>
-              </CCol>
-              <CCol md={6}>
-                <div className="mb-3">
-                  <CFormInput
-                    label="Respuesta de Seguridad"
-                    name="respuesta_de_seguridad"
-                    value={userForm.respuesta_de_seguridad}
-                    onChange={handleFormChange}
-                    placeholder="Respuesta a la palabra de seguridad"
-                  />
-                </div>
+              <CCol md={6} className="mb-3">
+                <CFormInput
+                  label="Respuesta"
+                  name="securityAnswer"
+                  value={userForm.securityAnswer}
+                  onChange={handleFormChange}
+                />
               </CCol>
             </CRow>
           </CForm>
         </CModalBody>
         <CModalFooter>
-          <CButton color="danger" className="text-white" onClick={() => setShowCreateModal(false)}>
-            Cerrar
-          </CButton>
-          <CButton
-            color="success"
-            className="text-white"
-            onClick={handleCreateUser}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <CSpinner size="sm" className="me-1" />
-                Creando...
-              </>
-            ) : (
-              'Guardar'
-            )}
+          <CButton color="secondary" onClick={() => setShowCreateModal(false)}>Cancelar</CButton>
+          <CButton color="primary" onClick={handleCreateUser} disabled={isSubmitting}>
+            {isSubmitting ? 'Guardando...' : 'Guardar'}
           </CButton>
         </CModalFooter>
       </CModal>
 
-      {/* Modal para confirmar eliminación */}
+      {/* Modal Eliminar */}
       <CModal visible={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <CModalHeader>
-          <CModalTitle>Confirmar eliminación</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          ¿Estás seguro que quieres eliminar al usuario <strong>{selectedUser?.username}</strong>?
-        </CModalBody>
+        <CModalHeader><CModalTitle>Eliminar Usuario</CModalTitle></CModalHeader>
+        <CModalBody>¿Seguro que desea eliminar a {selectedUser?.username}?</CModalBody>
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancelar
-          </CButton>
-          <CButton color="danger" onClick={handleDeleteUser} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <CSpinner size="sm" className="me-1" />
-                Eliminando...
-              </>
-            ) : (
-              'Eliminar'
-            )}
-          </CButton>
+          <CButton color="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</CButton>
+          <CButton color="danger" onClick={handleDeleteUser} disabled={isSubmitting}>Eliminar</CButton>
         </CModalFooter>
       </CModal>
     </>

@@ -21,7 +21,7 @@ const AppHeaderDropdown = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await api.post('/api/users/logout', {})
+      const response = await api.post('/api/user/logout', {})
 
       console.log('Logout response:', response)
 

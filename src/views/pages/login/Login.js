@@ -22,32 +22,41 @@ const api = helpFetch()
 
 const Login = () => {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
   const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
+    username: '',
     password: '',
     confirm: '',
-    role: 'admin',
+    securityWord: '',
+    securityAnswer: '',
+    personalId: null,
   })
 
   const [visiblePassError, setVisiblePassError] = useState(false)
-  const [visibleEmailError, setVisibleEmailError] = useState(false)
+  const [visibleUserError, setVisibleUserError] = useState(false)
   const [visibleGenericError, setVisibleGenericError] = useState(false)
+  const [showRecoverModal, setShowRecoverModal] = useState(false)
+  const [recoverStep, setRecoverStep] = useState(1) // 1: username, 2: answer & new pass
+  const [recoverData, setRecoverData] = useState({
+    username: '',
+    securityWord: '',
+    securityAnswer: '',
+    newPassword: '',
+  })
 
   const passwordMismatch = isRegistering && newUser.password !== newUser.confirm
-  const isPasswordInvalid = (isRegistering ? newUser.password : password).length < 6
+  const isPasswordInvalid = (isRegistering ? newUser.password : password).length < 8
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await api.post('/api/users/login', {
-        body: { email, password },
+      const response = await api.post('/api/user/login', {
+        body: { username, password },
       })
 
       if (response.accessToken && response.refreshToken) {
@@ -60,8 +69,8 @@ const Login = () => {
 
         if (msg.includes('contraseña') || msg.includes('password')) {
           setVisiblePassError(true)
-        } else if (msg.includes('correo') || msg.includes('email')) {
-          setVisibleEmailError(true)
+        } else if (msg.includes('usuario') || msg.includes('username') || msg.includes('credentials')) {
+          setVisibleUserError(true)
         } else {
           setVisibleGenericError(true)
         }
@@ -85,18 +94,67 @@ const Login = () => {
     }
 
     try {
-      const response = await api.post('/api/users/register', {
-        body: newUser,
+      const { confirm, ...registerData } = newUser
+      const response = await api.post('/api/user/register', {
+        body: registerData,
       })
 
       if (response.ok) {
         setIsRegistering(false)
-        setNewUser({ name: '', email: '', password: '', confirm: '', role: 'admin' })
+        setNewUser({
+          username: '',
+          password: '',
+          confirm: '',
+          securityWord: '',
+          securityAnswer: '',
+          personalId: null,
+        })
       } else {
         setVisibleGenericError(true)
       }
     } catch (err) {
       console.error('Error en el registro', err)
+      setVisibleGenericError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGetSecurityQuestion = async () => {
+    setLoading(true)
+    try {
+      const response = await api.get(`/api/user/security-question/${recoverData.username}`)
+      if (response.ok) {
+        setRecoverData({ ...recoverData, securityWord: response.securityWord })
+        setRecoverStep(2)
+      } else {
+        setVisibleUserError(true)
+      }
+    } catch (err) {
+      setVisibleGenericError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRecoverPassword = async () => {
+    setLoading(true)
+    try {
+      const response = await api.post('/api/user/recover-password', {
+        body: {
+          username: recoverData.username,
+          securityAnswer: recoverData.securityAnswer,
+          newPassword: recoverData.newPassword,
+        },
+      })
+      if (response.ok) {
+        setShowRecoverModal(false)
+        setRecoverStep(1)
+        alert('Contraseña restablecida con éxito')
+      } else {
+        setVisibleGenericError(true)
+      }
+    } catch (err) {
       setVisibleGenericError(true)
     } finally {
       setLoading(false)
@@ -139,7 +197,7 @@ const Login = () => {
         </h2>
         <p style={{ color: '#666', marginBottom: '30px' }}>
           {isRegistering
-            ? 'Rellena los campos para registrar un administrador'
+            ? 'Rellena los campos para crear tu cuenta'
             : 'Por favor ingresa tus datos para iniciar sesión'}
         </p>
 
@@ -152,14 +210,14 @@ const Login = () => {
               <CIcon icon={cilUser} />
             </CInputGroupText>
             <CFormInput
-              placeholder="Correo electrónico"
+              placeholder="Nombre de usuario"
               autoComplete="username"
               style={{ padding: '10px 15px' }}
-              value={isRegistering ? newUser.email : email}
+              value={isRegistering ? newUser.username : username}
               onChange={(e) =>
                 isRegistering
-                  ? setNewUser({ ...newUser, email: e.target.value })
-                  : setEmail(e.target.value)
+                  ? setNewUser({ ...newUser, username: e.target.value })
+                  : setUsername(e.target.value)
               }
               required
             />
@@ -185,24 +243,59 @@ const Login = () => {
           </CInputGroup>
 
           {isRegistering && (
-            <CInputGroup className="mb-3">
-              <CInputGroupText>
-                <CIcon icon={cilLockLocked} />
-              </CInputGroupText>
-              <CFormInput
-                type="password"
-                placeholder="Confirmar contraseña"
-                value={newUser.confirm}
-                style={{ padding: '10px 15px' }}
-                onChange={(e) => setNewUser({ ...newUser, confirm: e.target.value })}
-                required
-              />
-            </CInputGroup>
+            <>
+              <CInputGroup className="mb-3">
+                <CInputGroupText>
+                  <CIcon icon={cilLockLocked} />
+                </CInputGroupText>
+                <CFormInput
+                  type="password"
+                  placeholder="Confirmar contraseña"
+                  value={newUser.confirm}
+                  style={{ padding: '10px 15px' }}
+                  onChange={(e) => setNewUser({ ...newUser, confirm: e.target.value })}
+                  required
+                />
+              </CInputGroup>
+
+              <CInputGroup className="mb-3">
+                <CInputGroupText>
+                  <CIcon icon={cilUser} />
+                </CInputGroupText>
+                <CFormInput
+                  placeholder="ID de Seguridad (Ej: Color favorito)"
+                  value={newUser.securityWord}
+                  style={{ padding: '10px 15px' }}
+                  onChange={(e) => setNewUser({ ...newUser, securityWord: e.target.value })}
+                  required
+                />
+              </CInputGroup>
+
+              <CInputGroup className="mb-3">
+                <CInputGroupText>
+                  <CIcon icon={cilUser} />
+                </CInputGroupText>
+                <CFormInput
+                  placeholder="Respuesta de Seguridad"
+                  value={newUser.securityAnswer}
+                  style={{ padding: '10px 15px' }}
+                  onChange={(e) => setNewUser({ ...newUser, securityAnswer: e.target.value })}
+                  required
+                />
+              </CInputGroup>
+            </>
           )}
 
           {!isRegistering && (
             <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-              <a href="#" style={{ color: '#333', fontSize: '14px', textDecoration: 'underline' }}>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setShowRecoverModal(true)
+                }}
+                style={{ color: '#333', fontSize: '14px', textDecoration: 'underline' }}
+              >
                 No puedo iniciar sesión
               </a>
             </div>
@@ -274,16 +367,16 @@ const Login = () => {
         </CModalFooter>
       </CModal>
 
-      {/* Modal Correo Incorrecto */}
-      <CModal visible={visibleEmailError} onClose={() => setVisibleEmailError(false)}>
+      {/* Modal Usuario Incorrecto */}
+      <CModal visible={visibleUserError} onClose={() => setVisibleUserError(false)}>
         <CModalHeader className="bg-danger text-white">
-          <CModalTitle>Error de correo</CModalTitle>
+          <CModalTitle>Error de usuario</CModalTitle>
         </CModalHeader>
         <CModalBody>
-          <p>El correo electrónico no está registrado.</p>
+          <p>El nombre de usuario no es válido o no está registrado.</p>
         </CModalBody>
         <CModalFooter>
-          <CButton color="danger" onClick={() => setVisibleEmailError(false)}>
+          <CButton color="danger" onClick={() => setVisibleUserError(false)}>
             Cerrar
           </CButton>
         </CModalFooter>
@@ -300,6 +393,61 @@ const Login = () => {
         <CModalFooter>
           <CButton color="dark" onClick={() => setVisibleGenericError(false)}>
             Cerrar
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* Modal Recuperar Contraseña */}
+      <CModal visible={showRecoverModal} onClose={() => setShowRecoverModal(false)}>
+        <CModalHeader className="bg-info text-white">
+          <CModalTitle>Recuperar Contraseña</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {recoverStep === 1 ? (
+            <div className="mb-3">
+              <label className="form-label">Ingrese su nombre de usuario</label>
+              <CFormInput
+                value={recoverData.username}
+                onChange={(e) => setRecoverData({ ...recoverData, username: e.target.value })}
+                placeholder="Usuario"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="mb-3">
+                <label className="form-label">Pregunta de Seguridad:</label>
+                <p>
+                  <strong>{recoverData.securityWord}</strong>
+                </p>
+              </div>
+              <div className="mb-3">
+                <CFormInput
+                  placeholder="Su respuesta"
+                  value={recoverData.securityAnswer}
+                  onChange={(e) => setRecoverData({ ...recoverData, securityAnswer: e.target.value })}
+                />
+              </div>
+              <div className="mb-3">
+                <CFormInput
+                  type="password"
+                  placeholder="Nueva contraseña"
+                  value={recoverData.newPassword}
+                  onChange={(e) => setRecoverData({ ...recoverData, newPassword: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowRecoverModal(false)}>
+            Cancelar
+          </CButton>
+          <CButton
+            color="primary"
+            onClick={recoverStep === 1 ? handleGetSecurityQuestion : handleRecoverPassword}
+            disabled={loading}
+          >
+            {loading ? 'Procesando...' : recoverStep === 1 ? 'Siguiente' : 'Restablecer'}
           </CButton>
         </CModalFooter>
       </CModal>

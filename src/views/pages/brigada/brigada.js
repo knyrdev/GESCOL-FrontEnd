@@ -53,6 +53,7 @@ import {
   cilCalendar,
   cilReload,
   cilUserFollow,
+  cilPrint,
 } from "@coreui/icons"
 import { helpFetch } from "../../../api/helpFetch"
 
@@ -531,6 +532,48 @@ const BrigadeManagement = () => {
     setStudentForm({ studentIds: [] })
   }
 
+  const handleDownloadBrigadesPdf = async () => {
+    try {
+      setDownloadingPdf(true)
+      const blob = await api.downloadFile("/api/pdf/brigades/list")
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", "Listado_General_Brigadas.pdf")
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      addToast("PDF listado de brigadas generado con éxito", "success")
+    } catch (error) {
+      console.error("❌ Error descargando PDF de brigadas:", error)
+      addToast("Error al generar el PDF de brigadas", "danger")
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
+  const handleDownloadBrigadeDetailsPdf = async (brigade) => {
+    try {
+      setDownloadingBrigadePdf((prev) => ({ ...prev, [brigade.id]: true }))
+      const blob = await api.downloadFile(`/api/pdf/brigades/${brigade.id}/details`)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", `Detalle_Brigada_${brigade.name.replace(/\s+/g, "_")}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      addToast(`PDF de la brigada ${brigade.name} generado con éxito`, "success")
+    } catch (error) {
+      console.error("❌ Error descargando PDF de detalle de brigada:", error)
+      addToast(`Error al generar el PDF de la brigada ${brigade.name}`, "danger")
+    } finally {
+      setDownloadingBrigadePdf((prev) => ({ ...prev, [brigade.id]: false }))
+    }
+  }
+
   const openCreateModal = () => {
     resetBrigadeForm()
     setShowCreateModal(true)
@@ -790,6 +833,10 @@ const BrigadeManagement = () => {
                   {loading ? <CSpinner size="sm" className="me-1" /> : null}
                   <CIcon icon={cilReload} className="me-1" />
                   Actualizar
+                </CButton>
+                <CButton color="info" variant="outline" onClick={handleDownloadBrigadesPdf} disabled={downloadingPdf}>
+                  {downloadingPdf ? <CSpinner size="sm" className="me-1" /> : <CIcon icon={cilPrint} className="me-1" />}
+                  Imprimir Reporte
                 </CButton>
                 <CButton color="primary" onClick={openCreateModal}>
                   <CIcon icon={cilPlus} className="me-1" />
@@ -1299,6 +1346,14 @@ const BrigadeManagement = () => {
               )}
             </CModalBody>
             <CModalFooter className="bg-light">
+              <CButton color="info" onClick={() => handleDownloadBrigadeDetailsPdf(selectedBrigade)} disabled={downloadingBrigadePdf[selectedBrigade?.id]}>
+                {downloadingBrigadePdf[selectedBrigade?.id] ? (
+                  <CSpinner size="sm" className="me-2" />
+                ) : (
+                  <CIcon icon={cilPrint} className="me-2" />
+                )}
+                Imprimir Detalles
+              </CButton>
               <CButton color="secondary" onClick={() => setShowDetailsModal(false)}>
                 Cerrar
               </CButton>

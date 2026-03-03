@@ -49,9 +49,8 @@ const Profile = () => {
 
   // Estados para formularios
   const [profileForm, setProfileForm] = useState({
-    email: "",
-    security_word: "",
-    respuesta_de_seguridad: "",
+    securityWord: "",
+    securityAnswer: "",
   })
 
   const [passwordForm, setPasswordForm] = useState({
@@ -61,9 +60,8 @@ const Profile = () => {
   })
 
   const [securityForm, setSecurityForm] = useState({
-    current_security_answer: "",
-    new_security_word: "",
-    new_security_answer: "",
+    securityWord: "",
+    securityAnswer: "",
   })
 
   // Estados para validación
@@ -85,14 +83,13 @@ const Profile = () => {
 
       console.log("🔄 Cargando perfil de usuario...")
 
-      const response = await api.get("/api/users/profile")
+      const response = await api.get("/api/user/profile")
 
       if (response.ok) {
         setUserData(response.user)
         setProfileForm({
-          email: response.user.email || "",
-          security_word: response.user.security_word || "",
-          respuesta_de_seguridad: "", // No mostrar la respuesta actual por seguridad
+          securityWord: response.user.securityWord || "",
+          securityAnswer: "", // No mostrar la respuesta actual por seguridad
         })
         console.log("✅ Perfil cargado exitosamente")
       } else {
@@ -109,12 +106,8 @@ const Profile = () => {
   const validateProfileForm = () => {
     const errors = {}
 
-    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) {
-      errors.email = "Formato de email inválido"
-    }
-
-    if (profileForm.security_word && profileForm.security_word.length < 3) {
-      errors.security_word = "La palabra de seguridad debe tener al menos 3 caracteres"
+    if (profileForm.securityWord && profileForm.securityWord.length < 3) {
+      errors.securityWord = "La palabra de seguridad debe tener al menos 3 caracteres"
     }
 
     setFormErrors(errors)
@@ -130,8 +123,8 @@ const Profile = () => {
 
     if (!passwordForm.newPassword) {
       errors.newPassword = "La nueva contraseña es requerida"
-    } else if (passwordForm.newPassword.length < 6) {
-      errors.newPassword = "La contraseña debe tener al menos 6 caracteres"
+    } else if (passwordForm.newPassword.length < 8) {
+      errors.newPassword = "La contraseña debe tener al menos 8 caracteres"
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -152,7 +145,7 @@ const Profile = () => {
 
       console.log("💾 Actualizando perfil...")
 
-      const response = await api.put("/api/users/profile", {
+      const response = await api.put("/api/user/profile", {
         body: profileForm,
       })
 
@@ -216,20 +209,18 @@ const Profile = () => {
 
       console.log("🛡️ Actualizando configuración de seguridad...")
 
-      const response = await api.put("/api/users/profile/security", {
+      const response = await api.put("/api/user/profile", {
         body: {
-          current_security_answer: securityForm.current_security_answer,
-          security_word: securityForm.new_security_word,
-          respuesta_de_seguridad: securityForm.new_security_answer,
+          securityWord: securityForm.securityWord,
+          securityAnswer: securityForm.securityAnswer,
         },
       })
 
       if (response.ok) {
         setSuccess("Configuración de seguridad actualizada exitosamente")
         setSecurityForm({
-          current_security_answer: "",
-          new_security_word: "",
-          new_security_answer: "",
+          securityWord: "",
+          securityAnswer: "",
         })
         setShowSecurityModal(false)
         await loadUserProfile()
@@ -247,8 +238,8 @@ const Profile = () => {
 
   const getPasswordStrength = (password) => {
     let strength = 0
-    if (password.length >= 6) strength += 25
     if (password.length >= 8) strength += 25
+    if (password.length >= 10) strength += 25
     if (/[A-Z]/.test(password)) strength += 25
     if (/[0-9]/.test(password)) strength += 25
     return strength
@@ -316,7 +307,6 @@ const Profile = () => {
                 {userData.username?.charAt(0).toUpperCase() || "U"}
               </CAvatar>
               <h4 className="mb-1">{userData.username}</h4>
-              <p className="text-muted mb-2">{userData.email || "Sin email"}</p>
 
               {userData.personal_nombre && (
                 <p className="mb-2">
@@ -327,11 +317,8 @@ const Profile = () => {
               )}
 
               <div className="mb-3">
-                <CBadge color={userData.is_active ? "success" : "danger"} className="me-2">
-                  {userData.is_active ? "Activo" : "Inactivo"}
-                </CBadge>
-                <CBadge color={userData.email_verified ? "info" : "warning"}>
-                  {userData.email_verified ? "Email Verificado" : "Email Pendiente"}
+                <CBadge color={userData.isActive ? "success" : "danger"} className="me-2">
+                  {userData.isActive ? "Activo" : "Inactivo"}
                 </CBadge>
               </div>
 
@@ -364,7 +351,7 @@ const Profile = () => {
                 <CListGroupItem className="d-flex justify-content-between align-items-center">
                   <span>Último acceso:</span>
                   <small className="text-muted">
-                    {userData.last_login ? new Date(userData.last_login).toLocaleDateString() : "Nunca"}
+                    {userData.lastLogin ? new Date(userData.lastLogin).toLocaleDateString() : "Nunca"}
                   </small>
                 </CListGroupItem>
                 <CListGroupItem className="d-flex justify-content-between align-items-center">
@@ -405,26 +392,6 @@ const Profile = () => {
                           </div>
                         </CCol>
                         <CCol md={6}>
-                          <div className="mb-3">
-                            <CFormLabel>Email</CFormLabel>
-                            <CInputGroup>
-                              <CFormInput
-                                type="email"
-                                value={profileForm.email}
-                                onChange={(e) =>
-                                  setProfileForm((prev) => ({
-                                    ...prev,
-                                    email: e.target.value,
-                                  }))
-                                }
-                                invalid={!!formErrors.email}
-                              />
-                              <CInputGroupText>
-                                <CIcon icon={userData.email_verified ? cilCheck : cilX} />
-                              </CInputGroupText>
-                            </CInputGroup>
-                            {formErrors.email && <CFormFeedback invalid>{formErrors.email}</CFormFeedback>}
-                          </div>
                         </CCol>
                       </CRow>
 
@@ -433,18 +400,18 @@ const Profile = () => {
                           <div className="mb-3">
                             <CFormLabel>Palabra de Seguridad</CFormLabel>
                             <CFormInput
-                              value={profileForm.security_word}
+                              value={profileForm.securityWord}
                               onChange={(e) =>
                                 setProfileForm((prev) => ({
                                   ...prev,
-                                  security_word: e.target.value,
+                                  securityWord: e.target.value,
                                 }))
                               }
-                              invalid={!!formErrors.security_word}
+                              invalid={!!formErrors.securityWord}
                               placeholder="Ingrese una palabra de seguridad"
                             />
-                            {formErrors.security_word && (
-                              <CFormFeedback invalid>{formErrors.security_word}</CFormFeedback>
+                            {formErrors.securityWord && (
+                              <CFormFeedback invalid>{formErrors.securityWord}</CFormFeedback>
                             )}
                           </div>
                         </CCol>
@@ -452,11 +419,11 @@ const Profile = () => {
                           <div className="mb-3">
                             <CFormLabel>Respuesta de Seguridad</CFormLabel>
                             <CFormInput
-                              value={profileForm.respuesta_de_seguridad}
+                              value={profileForm.securityAnswer}
                               onChange={(e) =>
                                 setProfileForm((prev) => ({
                                   ...prev,
-                                  respuesta_de_seguridad: e.target.value,
+                                  securityAnswer: e.target.value,
                                 }))
                               }
                               placeholder="Respuesta a su palabra de seguridad"
@@ -514,13 +481,13 @@ const Profile = () => {
 
                       <CListGroupItem className="d-flex justify-content-between align-items-center">
                         <div>
-                          <h6 className="mb-1">Verificación de Email</h6>
+                          <h6 className="mb-1">Estado de Cuenta</h6>
                           <small className="text-muted">
-                            Estado: {userData.email_verified ? "Verificado" : "Pendiente"}
+                            {userData.isActive ? "Cuenta Activa" : "Cuenta Inactiva"}
                           </small>
                         </div>
-                        <CBadge color={userData.email_verified ? "success" : "warning"}>
-                          {userData.email_verified ? "Verificado" : "Pendiente"}
+                        <CBadge color={userData.isActive ? "success" : "danger"}>
+                          {userData.isActive ? "Activo" : "Inactivo"}
                         </CBadge>
                       </CListGroupItem>
                     </CListGroup>
@@ -633,27 +600,13 @@ const Profile = () => {
 
           <CForm>
             <div className="mb-3">
-              <CFormLabel>Respuesta de Seguridad Actual</CFormLabel>
+              <CFormLabel>Palabra de Seguridad</CFormLabel>
               <CFormInput
-                value={securityForm.current_security_answer}
+                value={securityForm.securityWord}
                 onChange={(e) =>
                   setSecurityForm((prev) => ({
                     ...prev,
-                    current_security_answer: e.target.value,
-                  }))
-                }
-                placeholder="Ingrese su respuesta de seguridad actual"
-              />
-            </div>
-
-            <div className="mb-3">
-              <CFormLabel>Nueva Palabra de Seguridad</CFormLabel>
-              <CFormInput
-                value={securityForm.new_security_word}
-                onChange={(e) =>
-                  setSecurityForm((prev) => ({
-                    ...prev,
-                    new_security_word: e.target.value,
+                    securityWord: e.target.value,
                   }))
                 }
                 placeholder="Ej: ¿Cuál es tu color favorito?"
@@ -661,16 +614,16 @@ const Profile = () => {
             </div>
 
             <div className="mb-3">
-              <CFormLabel>Nueva Respuesta de Seguridad</CFormLabel>
+              <CFormLabel>Respuesta de Seguridad</CFormLabel>
               <CFormInput
-                value={securityForm.new_security_answer}
+                value={securityForm.securityAnswer}
                 onChange={(e) =>
                   setSecurityForm((prev) => ({
                     ...prev,
-                    new_security_answer: e.target.value,
+                    securityAnswer: e.target.value,
                   }))
                 }
-                placeholder="Respuesta a la nueva palabra de seguridad"
+                placeholder="Respuesta a la palabra de seguridad"
               />
             </div>
           </CForm>
