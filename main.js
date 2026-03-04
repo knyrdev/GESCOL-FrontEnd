@@ -31,10 +31,10 @@ function registerAppProtocol() {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 768,
+    width: 1024,
+    height: 720,
+    minWidth: 900,
+    minHeight: 400,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
