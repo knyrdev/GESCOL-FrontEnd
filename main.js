@@ -1,6 +1,22 @@
 const { app, BrowserWindow, protocol } = require('electron');
 const path = require('path');
 
+// Registrar el esquema 'app' como privilegiado ANTES de que la app est lista
+// Esto es CRUCIAL para que localStorage, cookies y fetch funcionen
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      allowServiceWorkers: true,
+      corsEnabled: true,
+      stream: true,
+    },
+  },
+]);
+
 // Detectar si estamos en modo desarrollo
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 
