@@ -57,7 +57,7 @@ export default function CedulaInput({
         onChange={(e) => handleNumberChange(e.target.value)}
         disabled={disabled}
         required={required}
-        maxLength="8"
+        maxLength="15"
       />
     </CInputGroup>
   )
